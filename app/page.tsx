@@ -75,8 +75,8 @@ export default function Landing() {
 
           {/* Floating language badges */}
           <div className="flex items-center justify-center gap-6 flex-wrap">
-            {["🇸🇦 Arabic", "🇺🇸 English", "🇪🇸 Spanish"].map((lang) => (
-              <div key={lang} className="px-5 py-3 rounded-full glass gold-border text-lg font-medium animate-float" style={{ animationDelay: Math.random() + "s" }}>
+            {[["🇸🇦 Arabic", "0s"], ["🇺🇸 English", "1s"], ["🇪🇸 Spanish", "2s"]].map(([lang, delay]) => (
+              <div key={lang} className="px-5 py-3 rounded-full glass gold-border text-lg font-medium animate-float" style={{ animationDelay: delay }}>
                 {lang}
               </div>
             ))}
