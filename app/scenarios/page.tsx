@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { addXP } from "@/lib/storage";
+import { addXP, getProfile } from "@/lib/storage";
 
 interface Scenario {
   id: string; icon: string; title: string; aiRole: string; userRole: string; context: string; difficulty: string; duration: string;
@@ -19,7 +19,13 @@ const SCENARIOS: Scenario[] = [
 interface Message { role: "user" | "assistant"; content: string; }
 
 export default function ScenariosPage() {
-  const [profile] = useState(() => typeof window !== "undefined" ? require("@/lib/storage").getProfile() : null);
+  const [profile, setProfile] = useState<ReturnType<typeof getProfile> | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setProfile(getProfile());
+    setMounted(true);
+  }, []);
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -122,6 +128,10 @@ export default function ScenariosPage() {
     } catch { /* ignore */ } finally {
       setLoading(false);
     }
+  }
+
+  if (!mounted) {
+    return <div className="min-h-screen" style={{ background: "#080d1a" }} />;
   }
 
   if (!profile) {

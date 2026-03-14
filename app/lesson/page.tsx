@@ -16,10 +16,16 @@ interface LessonData {
 }
 
 export default function LessonPage() {
-  const [profile] = useState(() => typeof window !== "undefined" ? require("@/lib/storage").getProfile() : null);
+  const [profile, setProfile] = useState<ReturnType<typeof getProfile> | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [topic] = useState(() => TOPICS[new Date().getDay() % TOPICS.length]);
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setProfile(getProfile());
+    setMounted(true);
+  }, []);
   const [tab, setTab] = useState<"vocab" | "phrases" | "grammar" | "quiz">("vocab");
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
@@ -35,15 +41,16 @@ export default function LessonPage() {
         body: JSON.stringify({ language: profile.targetLanguage, level: profile.level, topic }),
       });
       const data = await res.json();
+      if (!res.ok || data.error || !data.vocabulary) throw new Error(data.error || "Invalid lesson data");
       setLesson(data);
-    } catch {
-      console.error("Failed to load lesson");
+    } catch (err) {
+      console.error("Failed to load lesson", err);
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { loadLesson(); }, []); // eslint-disable-line
+  useEffect(() => { if (profile) loadLesson(); }, [profile]); // eslint-disable-line
 
   function handleQuizSubmit() {
     setQuizSubmitted(true);
@@ -53,6 +60,10 @@ export default function LessonPage() {
     addWordsLearned(lesson.vocabulary.length);
     addLessonCompleted();
     setCompleted(true);
+  }
+
+  if (!mounted) {
+    return <div className="min-h-screen" style={{ background: "#080d1a" }} />;
   }
 
   if (!profile) {
@@ -123,7 +134,7 @@ export default function LessonPage() {
             {/* Vocabulary */}
             {tab === "vocab" && (
               <div className="grid md:grid-cols-2 gap-4">
-                {lesson.vocabulary.map((item, i) => (
+                {(lesson.vocabulary ?? []).map((item, i) => (
                   <div key={i} className="glass rounded-xl p-5 glass-hover">
                     <div className="flex items-start justify-between mb-2">
                       <div className="text-xl font-bold text-white">{item.word}</div>
@@ -139,7 +150,7 @@ export default function LessonPage() {
             {/* Phrases */}
             {tab === "phrases" && (
               <div className="space-y-4">
-                {lesson.phrases.map((phrase, i) => (
+                {(lesson.phrases ?? []).map((phrase, i) => (
                   <div key={i} className="glass rounded-xl p-5">
                     <div className="text-lg font-bold text-white mb-1">{phrase.phrase}</div>
                     <div className="text-xs text-slate-500 mb-2">/{phrase.pronunciation}/</div>
@@ -160,7 +171,7 @@ export default function LessonPage() {
                 <p className="text-slate-300 mb-6 leading-relaxed">{lesson.grammar.explanation}</p>
                 <div className="space-y-3">
                   <div className="text-xs text-slate-500 uppercase tracking-wider">Examples</div>
-                  {lesson.grammar.examples.map((ex, i) => (
+                  {(lesson.grammar?.examples ?? []).map((ex, i) => (
                     <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.1)" }}>
                       <span className="text-amber-400 font-bold">{i + 1}.</span>
                       <span className="text-slate-300 text-sm">{ex}</span>
@@ -173,7 +184,7 @@ export default function LessonPage() {
             {/* Quiz */}
             {tab === "quiz" && (
               <div className="space-y-6">
-                {lesson.quiz.map((q, qi) => (
+                {(lesson.quiz ?? []).map((q, qi) => (
                   <div key={qi} className="glass rounded-2xl p-6">
                     <div className="font-bold mb-4 text-lg">{qi + 1}. {q.question}</div>
                     <div className="space-y-2">

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { addXP } from "@/lib/storage";
+import { addXP, getProfile } from "@/lib/storage";
 
 interface Message { role: "user" | "assistant"; content: string; }
 
@@ -13,7 +13,13 @@ const STARTER_PROMPTS = [
 ];
 
 export default function ConversationPage() {
-  const [profile] = useState(() => typeof window !== "undefined" ? require("@/lib/storage").getProfile() : null);
+  const [profile, setProfile] = useState<ReturnType<typeof getProfile> | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setProfile(getProfile());
+    setMounted(true);
+  }, []);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -97,6 +103,10 @@ export default function ConversationPage() {
       e.preventDefault();
       sendMessage();
     }
+  }
+
+  if (!mounted) {
+    return <div className="min-h-screen" style={{ background: "#080d1a" }} />;
   }
 
   if (!profile) {
