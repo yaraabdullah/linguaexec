@@ -32,7 +32,7 @@ Help the executive practice real-world ${targetLang} business communication.`;
     async start(controller) {
       try {
         const apiStream = await client.messages.stream({
-          model: "claude-opus-4-6",
+          model: "claude-haiku-4-5",
           max_tokens: 600,
           system: systemPrompt,
           messages: messages.map((m: { role: string; content: string }) => ({

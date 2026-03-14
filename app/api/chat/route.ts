@@ -27,7 +27,7 @@ Always end with a follow-up question to keep conversation flowing.`;
     async start(controller) {
       try {
         const stream = await client.messages.stream({
-          model: "claude-opus-4-6",
+          model: "claude-haiku-4-5",
           max_tokens: 800,
           system: systemPrompt,
           messages: messages.map((m: { role: string; content: string }) => ({
