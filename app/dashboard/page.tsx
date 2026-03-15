@@ -258,7 +258,7 @@ export default function Dashboard() {
                   <div className="text-xs text-slate-600 mb-2">{date.getDate()}</div>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mx-auto mb-2 transition-all ${isToday ? "ring-2" : ""}`}
                     style={isDone
-                      ? { background: "linear-gradient(135deg, #10b981, #059669)", color: "black", ringColor: "#10b981" }
+                      ? { background: "linear-gradient(135deg, #10b981, #059669)", color: "black", outline: "2px solid #10b981", outlineOffset: "2px" }
                       : isToday
                         ? { background: lc.bg, color: lc.text, outline: `2px solid ${lc.text}`, outlineOffset: "2px" }
                         : { background: "rgba(255,255,255,0.04)", color: "#334155" }}>
