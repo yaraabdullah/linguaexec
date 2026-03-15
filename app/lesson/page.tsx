@@ -1,8 +1,12 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-const TOPICS = ["Greetings & Introductions", "Business Meetings", "Travel & Dining", "Negotiations", "Presentations", "Small Talk", "Emails & Writing"];
+export const TOPICS = [
+  "Greetings & Introductions", "Business Meetings", "Travel & Dining",
+  "Negotiations", "Presentations", "Small Talk", "Emails & Writing",
+];
 
 // Map app language keys → Google Translate TTS lang codes
 const LANG_CODES: Record<string, string> = {
@@ -23,10 +27,8 @@ interface LessonData {
 }
 interface UserData { name: string; targetLanguage: string; level: string; }
 
-// Speak button component — uses Google Translate TTS via server proxy for quality
 function SpeakButton({ text, langCode }: { text: string; langCode: string }) {
   const [speaking, setSpeaking] = useState(false);
-
   const speak = useCallback(async () => {
     if (speaking) return;
     setSpeaking(true);
@@ -39,28 +41,20 @@ function SpeakButton({ text, langCode }: { text: string; langCode: string }) {
       audio.onended = () => { setSpeaking(false); URL.revokeObjectURL(url); };
       audio.onerror = () => { setSpeaking(false); URL.revokeObjectURL(url); };
       await audio.play();
-    } catch {
-      setSpeaking(false);
-    }
+    } catch { setSpeaking(false); }
   }, [text, langCode, speaking]);
 
   return (
-    <button
-      onClick={speak}
-      title="Listen to pronunciation"
+    <button onClick={speak} title="Listen to pronunciation"
       className="flex items-center justify-center rounded-full transition-all flex-shrink-0"
-      style={{
-        width: 36, height: 36,
+      style={{ width: 36, height: 36,
         background: speaking ? "rgba(16,185,129,0.35)" : "rgba(16,185,129,0.15)",
-        border: speaking ? "1px solid #10b981" : "1px solid rgba(16,185,129,0.3)",
-      }}
-    >
+        border: speaking ? "1px solid #10b981" : "1px solid rgba(16,185,129,0.3)" }}>
       {speaking ? (
-        // animated bars while speaking
         <span className="flex items-end gap-[2px] h-4">
-          {[1, 2, 3].map(i => (
+          {[1,2,3].map(i => (
             <span key={i} className="w-[3px] rounded-full bg-emerald-400"
-              style={{ height: `${i * 4 + 4}px`, animation: `bounce ${0.4 + i * 0.1}s ease-in-out infinite alternate` }} />
+              style={{ height: `${i*4+4}px`, animation: `bounce ${0.4+i*0.1}s ease-in-out infinite alternate` }} />
           ))}
         </span>
       ) : (
@@ -74,10 +68,13 @@ function SpeakButton({ text, langCode }: { text: string; langCode: string }) {
   );
 }
 
-export default function LessonPage() {
+function LessonContent() {
+  const searchParams = useSearchParams();
+  const topicParam = searchParams.get("topic");
+  const topic = topicParam && TOPICS.includes(topicParam) ? topicParam : TOPICS[new Date().getDay() % TOPICS.length];
+
   const [user, setUser] = useState<UserData | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [topic] = useState(() => TOPICS[new Date().getDay() % TOPICS.length]);
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<"vocab" | "phrases" | "grammar" | "quiz">("vocab");
@@ -90,7 +87,7 @@ export default function LessonPage() {
     setMounted(true);
   }, []);
 
-  const langCode = user ? (LANG_CODES[user.targetLanguage] ?? "en-US") : "en-US";
+  const langCode = user ? (LANG_CODES[user.targetLanguage] ?? "en") : "en";
 
   async function loadLesson() {
     if (!user) return;
@@ -113,21 +110,41 @@ export default function LessonPage() {
 
   useEffect(() => { if (user) loadLesson(); }, [user]); // eslint-disable-line
 
-  function handleQuizSubmit() {
-    setQuizSubmitted(true);
+  async function handleQuizSubmit() {
     if (!lesson) return;
+    setQuizSubmitted(true);
     const correct = quizAnswers.filter((a, i) => a === lesson.quiz[i]?.correct).length;
     const xpEarned = correct * 50 + 100;
-    fetch("/api/progress", {
+
+    // 1. Update XP + lesson count
+    await fetch("/api/progress", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ xp: xpEarned, wordsLearned: lesson.vocabulary.length, lessonCompleted: true }),
     });
+
+    // 2. Mark topic as completed
+    await fetch("/api/dictionary", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ topic }),
+    });
+
+    // 3. Save vocabulary + phrases to dictionary
+    const words = [
+      ...lesson.vocabulary.map(v => ({ word: v.word, pronunciation: v.pronunciation, translation: v.translation, example: v.example, type: "word" })),
+      ...lesson.phrases.map(p => ({ word: p.phrase, pronunciation: p.pronunciation, translation: p.translation, example: p.usage, type: "phrase" })),
+    ];
+    await fetch("/api/dictionary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ words, topic, language: user?.targetLanguage }),
+    });
+
     setCompleted(true);
   }
 
   if (!mounted) return <div className="min-h-screen" style={{ background: "#080d1a" }} />;
-
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#080d1a" }}>
@@ -136,6 +153,9 @@ export default function LessonPage() {
     );
   }
 
+  const topicIndex = TOPICS.indexOf(topic);
+  const nextTopic = TOPICS[topicIndex + 1] ?? null;
+
   return (
     <div className="min-h-screen" style={{ background: "#080d1a" }}>
       <style>{`@keyframes bounce { from { transform: scaleY(0.5); } to { transform: scaleY(1.2); } }`}</style>
@@ -143,14 +163,14 @@ export default function LessonPage() {
       <nav className="glass border-b sticky top-0 z-10" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">← Dashboard</Link>
-          <span className="gradient-text font-bold">Today&apos;s Lesson</span>
+          <span className="gradient-text font-bold">Lesson</span>
           <div className="text-sm text-slate-500">{user.targetLanguage} · {user.level}</div>
         </div>
       </nav>
 
       <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="mb-8">
-          <div className="text-emerald-400 text-sm font-semibold mb-1 uppercase tracking-wider">📖 Today&apos;s Topic</div>
+          <div className="text-emerald-400 text-sm font-semibold mb-1 uppercase tracking-wider">📖 Topic {topicIndex + 1} of {TOPICS.length}</div>
           <h1 className="text-3xl font-black">{topic}</h1>
           {lesson && <p className="text-slate-400 mt-1">{lesson.subtitle}</p>}
         </div>
@@ -165,7 +185,6 @@ export default function LessonPage() {
           </div>
         ) : lesson ? (
           <>
-            {/* Cultural tip */}
             {lesson.culturalTip && (
               <div className="mb-6 p-4 rounded-xl flex items-start gap-3" style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
                 <span className="text-xl">🌍</span>
@@ -176,7 +195,6 @@ export default function LessonPage() {
               </div>
             )}
 
-            {/* Tabs */}
             <div className="flex gap-2 mb-6 flex-wrap">
               {(["vocab", "phrases", "grammar", "quiz"] as const).map((t) => (
                 <button key={t} onClick={() => setTab(t)}
@@ -187,7 +205,6 @@ export default function LessonPage() {
               ))}
             </div>
 
-            {/* Vocabulary */}
             {tab === "vocab" && (
               <div className="grid md:grid-cols-2 gap-4">
                 {(lesson.vocabulary ?? []).map((item, i) => (
@@ -196,9 +213,7 @@ export default function LessonPage() {
                       <div className="text-xl font-bold text-white">{item.word}</div>
                       <SpeakButton text={item.word} langCode={langCode} />
                     </div>
-                    <div className="text-sm font-semibold px-3 py-1 rounded-full inline-block text-emerald-300 mb-2" style={{ background: "rgba(16,185,129,0.15)" }}>
-                      🔊 {item.pronunciation}
-                    </div>
+                    <div className="text-sm font-semibold px-3 py-1 rounded-full inline-block text-emerald-300 mb-2" style={{ background: "rgba(16,185,129,0.15)" }}>🔊 {item.pronunciation}</div>
                     <div className="text-emerald-400 font-semibold text-sm mb-2">{item.translation}</div>
                     <div className="text-slate-400 text-sm italic">{item.example}</div>
                   </div>
@@ -206,7 +221,6 @@ export default function LessonPage() {
               </div>
             )}
 
-            {/* Phrases */}
             {tab === "phrases" && (
               <div className="space-y-4">
                 {(lesson.phrases ?? []).map((phrase, i) => (
@@ -215,19 +229,14 @@ export default function LessonPage() {
                       <div className="text-lg font-bold text-white">{phrase.phrase}</div>
                       <SpeakButton text={phrase.phrase} langCode={langCode} />
                     </div>
-                    <div className="text-sm font-semibold px-3 py-1 rounded-full inline-block text-emerald-300 mb-3" style={{ background: "rgba(16,185,129,0.15)" }}>
-                      🔊 {phrase.pronunciation}
-                    </div>
+                    <div className="text-sm font-semibold px-3 py-1 rounded-full inline-block text-emerald-300 mb-3" style={{ background: "rgba(16,185,129,0.15)" }}>🔊 {phrase.pronunciation}</div>
                     <div className="text-emerald-400 font-semibold text-sm mb-2">{phrase.translation}</div>
-                    <div className="text-slate-400 text-sm flex items-start gap-2">
-                      <span>💡</span><span>{phrase.usage}</span>
-                    </div>
+                    <div className="text-slate-400 text-sm flex items-start gap-2"><span>💡</span><span>{phrase.usage}</span></div>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Grammar */}
             {tab === "grammar" && (
               <div className="glass rounded-2xl p-8">
                 <div className="text-xs text-emerald-400 font-semibold mb-2 uppercase tracking-wider">Grammar Rule</div>
@@ -248,9 +257,7 @@ export default function LessonPage() {
                           <SpeakButton text={text} langCode={langCode} />
                         </div>
                         {isObj && (ex as GrammarExample).pronunciation && (
-                          <div className="ml-6 text-sm font-semibold px-3 py-0.5 rounded-full inline-block text-emerald-300 mb-1" style={{ background: "rgba(16,185,129,0.15)" }}>
-                            🔊 {(ex as GrammarExample).pronunciation}
-                          </div>
+                          <div className="ml-6 text-sm font-semibold px-3 py-0.5 rounded-full inline-block text-emerald-300 mb-1" style={{ background: "rgba(16,185,129,0.15)" }}>🔊 {(ex as GrammarExample).pronunciation}</div>
                         )}
                         {isObj && (ex as GrammarExample).translation && (
                           <div className="ml-6 text-sm text-slate-400 mt-1">{(ex as GrammarExample).translation}</div>
@@ -262,7 +269,6 @@ export default function LessonPage() {
               </div>
             )}
 
-            {/* Quiz */}
             {tab === "quiz" && (
               <div className="space-y-6">
                 {(lesson.quiz ?? []).map((q, qi) => (
@@ -283,9 +289,7 @@ export default function LessonPage() {
                                 : selected ? { background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.4)", color: "#6ee7b7" }
                                 : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8" }}>
                               <div className="font-semibold text-base">{opt}</div>
-                              {q.pronunciations?.[oi] && (
-                                <div className="text-xs mt-0.5 opacity-70">{q.pronunciations[oi]}</div>
-                              )}
+                              {q.pronunciations?.[oi] && <div className="text-xs mt-0.5 opacity-70">{q.pronunciations[oi]}</div>}
                             </button>
                             <SpeakButton text={opt} langCode={langCode} />
                           </div>
@@ -293,9 +297,7 @@ export default function LessonPage() {
                       })}
                     </div>
                     {quizSubmitted && (
-                      <div className="mt-3 text-sm text-slate-400 flex items-start gap-2">
-                        <span>💡</span><span>{q.explanation}</span>
-                      </div>
+                      <div className="mt-3 text-sm text-slate-400 flex items-start gap-2"><span>💡</span><span>{q.explanation}</span></div>
                     )}
                   </div>
                 ))}
@@ -310,13 +312,22 @@ export default function LessonPage() {
                   <div className="text-center p-8 glass rounded-2xl" style={{ border: "1px solid rgba(16,185,129,0.3)" }}>
                     <div className="text-4xl mb-3">🎉</div>
                     <h3 className="text-xl font-black gradient-text mb-2">Lesson Complete!</h3>
-                    <p className="text-slate-400 text-sm mb-6">+{quizAnswers.filter((a, i) => a === lesson.quiz[i]?.correct).length * 50 + 100} XP earned</p>
-                    <div className="flex gap-3 justify-center">
-                      <Link href="/conversation" className="px-6 py-3 rounded-full font-bold text-sm text-black" style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
-                        Practice Conversation →
+                    <p className="text-slate-400 text-sm mb-2">+{quizAnswers.filter((a, i) => a === lesson.quiz[i]?.correct).length * 50 + 100} XP earned</p>
+                    <p className="text-slate-500 text-xs mb-6">Words saved to your Dictionary ✓</p>
+                    <div className="flex gap-3 justify-center flex-wrap">
+                      {nextTopic && (
+                        <Link href={`/lesson?topic=${encodeURIComponent(nextTopic)}`}
+                          className="px-6 py-3 rounded-full font-bold text-sm text-black"
+                          style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
+                          Next: {nextTopic} →
+                        </Link>
+                      )}
+                      <Link href="/dictionary" className="px-6 py-3 rounded-full font-bold text-sm text-black"
+                        style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
+                        View Dictionary 📖
                       </Link>
                       <Link href="/dashboard" className="px-6 py-3 rounded-full font-semibold text-sm glass glass-hover">
-                        Back to Dashboard
+                        Dashboard
                       </Link>
                     </div>
                   </div>
@@ -334,5 +345,13 @@ export default function LessonPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function LessonPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" style={{ background: "#080d1a" }} />}>
+      <LessonContent />
+    </Suspense>
   );
 }

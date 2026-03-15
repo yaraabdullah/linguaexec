@@ -15,7 +15,7 @@ export async function GET() {
       goals: true, dailyMinutes: true, joinedAt: true,
       streak: true, lastActiveDate: true, wordsLearned: true,
       lessonsCompleted: true, minutesPracticed: true,
-      currentLevel: true, xp: true,
+      currentLevel: true, xp: true, completedTopics: true,
     },
   });
 

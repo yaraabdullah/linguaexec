@@ -58,8 +58,26 @@ model User {
   minutesPracticed Int      @default(0)
   currentLevel     Int      @default(1)
   xp               Int      @default(0)
-  accounts Account[]
-  sessions Session[]
+  completedTopics  String[]
+  accounts    Account[]
+  sessions    Session[]
+  savedWords  SavedWord[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model SavedWord {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  word          String
+  pronunciation String
+  translation   String
+  example       String?
+  language      String
+  type          String   @default("word")
+  topic         String   @default("")
+  learnedAt     DateTime @default(now())
+
+  @@unique([userId, word, language])
 }
