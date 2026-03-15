@@ -13,7 +13,7 @@ const features = [
   { icon: "💼", title: "Business Scenarios", desc: "Role-play real executive situations: board meetings, negotiations, and client calls." },
   { icon: "📊", title: "Adaptive Progress", desc: "AI tracks your weak spots and optimizes your learning path automatically." },
   { icon: "🌍", title: "Cultural Intelligence", desc: "Learn business etiquette and cultural nuances alongside the language." },
-  { icon: "🔄", title: "Spaced Repetition", desc: "Smart review system ensures vocabulary sticks long-term with minimal effort." },
+  { icon: "🏆", title: "Global Leaderboard", desc: "Compete with executives worldwide. Track your rank, streak, and XP in real time." },
 ];
 
 const testimonials = [
@@ -33,23 +33,27 @@ export default function Landing() {
             <span className="text-xl font-bold gradient-text">LinguaExec</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-slate-400">
-            <a href="#features" className="hover:text-amber-400 transition-colors">Features</a>
-            <a href="#languages" className="hover:text-amber-400 transition-colors">Languages</a>
-            <a href="#testimonials" className="hover:text-amber-400 transition-colors">Success Stories</a>
+            <a href="#features" className="hover:text-emerald-400 transition-colors">Features</a>
+            <a href="#languages" className="hover:text-emerald-400 transition-colors">Languages</a>
+            <a href="#testimonials" className="hover:text-emerald-400 transition-colors">Success Stories</a>
           </div>
-          <Link href="/onboarding"
-            className="px-5 py-2 rounded-full text-sm font-semibold text-black transition-all hover:scale-105"
-            style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)" }}>
-            Start Free →
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Sign In</Link>
+            <Link href="/register"
+              className="px-5 py-2 rounded-full text-sm font-semibold text-black transition-all hover:scale-105"
+              style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
+              Start Free →
+            </Link>
+          </div>
         </div>
       </nav>
 
       {/* Hero */}
       <section className="pt-32 pb-20 px-6 text-center">
         <div className="max-w-5xl mx-auto animate-fade-in-up">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass gold-border mb-8 text-sm text-amber-400">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8 text-sm text-emerald-400"
+            style={{ border: "1px solid rgba(16,185,129,0.3)" }}>
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#10b981" }}></span>
             Powered by Claude AI · No human tutors needed
           </div>
           <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
@@ -62,21 +66,21 @@ export default function Landing() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Link href="/onboarding"
+            <Link href="/register"
               className="px-8 py-4 rounded-full text-lg font-bold text-black transition-all hover:scale-105 gold-glow"
-              style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)" }}>
+              style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
               Get Started Free →
             </Link>
-            <Link href="/dashboard"
+            <Link href="/login"
               className="px-8 py-4 rounded-full text-lg font-semibold text-slate-300 glass glass-hover transition-all">
-              View Dashboard
+              Sign In
             </Link>
           </div>
 
-          {/* Floating language badges */}
           <div className="flex items-center justify-center gap-6 flex-wrap">
             {[["🇸🇦 Arabic", "0s"], ["🇺🇸 English", "1s"], ["🇪🇸 Spanish", "2s"]].map(([lang, delay]) => (
-              <div key={lang} className="px-5 py-3 rounded-full glass gold-border text-lg font-medium animate-float" style={{ animationDelay: delay }}>
+              <div key={lang} className="px-5 py-3 rounded-full glass text-lg font-medium animate-float"
+                style={{ animationDelay: delay, border: "1px solid rgba(16,185,129,0.2)" }}>
                 {lang}
               </div>
             ))}
@@ -108,14 +112,14 @@ export default function Landing() {
           <p className="text-slate-400 text-center mb-12">Three languages. Unlimited potential.</p>
           <div className="grid md:grid-cols-3 gap-6">
             {languages.map((lang) => (
-              <Link key={lang.name} href="/onboarding"
+              <Link key={lang.name} href="/register"
                 className={`p-8 rounded-2xl glass glass-hover border ${lang.border} transition-all hover:scale-105 group`}>
                 <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${lang.color} flex items-center justify-center text-3xl mb-4`}>
                   {lang.flag}
                 </div>
                 <h3 className="text-xl font-bold mb-1">{lang.name}</h3>
                 <p className="text-slate-400 text-sm mb-3">{lang.native}</p>
-                <div className="text-xs text-amber-400">{lang.learners} executives learning →</div>
+                <div className="text-xs text-emerald-400">{lang.learners} executives learning →</div>
               </Link>
             ))}
           </div>
@@ -146,10 +150,10 @@ export default function Landing() {
           <p className="text-slate-400 text-center mb-16">Real executives. Real results.</p>
           <div className="grid md:grid-cols-3 gap-6">
             {testimonials.map((t) => (
-              <div key={t.name} className="p-6 rounded-2xl glass gold-border">
+              <div key={t.name} className="p-6 rounded-2xl glass" style={{ border: "1px solid rgba(16,185,129,0.2)" }}>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-black"
-                    style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)" }}>
+                    style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
                     {t.avatar}
                   </div>
                   <div>
@@ -166,13 +170,13 @@ export default function Landing() {
 
       {/* CTA */}
       <section className="py-24 px-6">
-        <div className="max-w-3xl mx-auto text-center glass rounded-3xl p-16 gold-border">
+        <div className="max-w-3xl mx-auto text-center glass rounded-3xl p-16" style={{ border: "1px solid rgba(16,185,129,0.25)" }}>
           <div className="text-5xl mb-6">🚀</div>
           <h2 className="text-4xl font-black mb-4">Ready to Get Fluent?</h2>
           <p className="text-slate-400 mb-8">Join 60,000+ executives already learning with AI. Start speaking in days, not years.</p>
-          <Link href="/onboarding"
+          <Link href="/register"
             className="inline-block px-10 py-5 rounded-full text-xl font-bold text-black transition-all hover:scale-105 gold-glow"
-            style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)" }}>
+            style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
             Start Your Journey →
           </Link>
         </div>

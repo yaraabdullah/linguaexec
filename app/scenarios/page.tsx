@@ -1,12 +1,11 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { addXP, getProfile } from "@/lib/storage";
 import ReactMarkdown from "react-markdown";
 
-interface Scenario {
-  id: string; icon: string; title: string; aiRole: string; userRole: string; context: string; difficulty: string; duration: string;
-}
+interface Scenario { id: string; icon: string; title: string; aiRole: string; userRole: string; context: string; difficulty: string; duration: string; }
+interface Message { role: "user" | "assistant"; content: string; }
+interface UserData { name: string; targetLanguage: string; level: string; }
 
 const SCENARIOS: Scenario[] = [
   { id: "board-meeting", icon: "🏢", title: "Board Meeting", aiRole: "Board Chairman", userRole: "CEO presenting quarterly results", context: "A quarterly board meeting where you need to present financial results and strategic plans.", difficulty: "Advanced", duration: "15 min" },
@@ -17,16 +16,17 @@ const SCENARIOS: Scenario[] = [
   { id: "restaurant", icon: "🍽️", title: "Business Dinner", aiRole: "Restaurant Host / Business Partner", userRole: "Executive hosting a dinner", context: "Hosting an international business partner for an important dinner meeting.", difficulty: "Beginner", duration: "8 min" },
 ];
 
-interface Message { role: "user" | "assistant"; content: string; }
+const LANGUAGE_LABELS: Record<string, string> = { arabic: "Arabic 🇸🇦", english: "English 🇺🇸", spanish: "Spanish 🇪🇸" };
 
 export default function ScenariosPage() {
-  const [profile, setProfile] = useState<ReturnType<typeof getProfile> | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setProfile(getProfile());
+    fetch("/api/progress").then(r => r.json()).then(setUser).catch(console.error);
     setMounted(true);
   }, []);
+
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -36,23 +36,23 @@ export default function ScenariosPage() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, streamText]);
 
+  const mdComponents = {
+    p: ({children}: {children?: React.ReactNode}) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
+    strong: ({children}: {children?: React.ReactNode}) => <strong className="font-bold text-white">{children}</strong>,
+    ul: ({children}: {children?: React.ReactNode}) => <ul className="mb-3 space-y-2 list-none">{children}</ul>,
+    li: ({children}: {children?: React.ReactNode}) => <li className="pl-1 leading-relaxed">{children}</li>,
+  };
+
   async function startScenario(s: Scenario) {
     setSelectedScenario(s);
     setMessages([]);
     setLoading(true);
 
-    const openingMessages: Message[] = [{ role: "user", content: "[START SCENARIO]" }];
-
     try {
       const res = await fetch("/api/scenario", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: openingMessages,
-          language: profile?.targetLanguage,
-          level: profile?.level,
-          scenario: s,
-        }),
+        body: JSON.stringify({ messages: [{ role: "user", content: "[START SCENARIO]" }], language: user?.targetLanguage, level: user?.level, scenario: s }),
       });
 
       const reader = res.body?.getReader();
@@ -78,13 +78,11 @@ export default function ScenariosPage() {
 
       setMessages([{ role: "assistant", content: fullText }]);
       setStreamText("");
-    } catch { /* ignore */ } finally {
-      setLoading(false);
-    }
+    } catch { /* ignore */ } finally { setLoading(false); }
   }
 
   async function sendMessage() {
-    if (!input.trim() || loading || !selectedScenario || !profile) return;
+    if (!input.trim() || loading || !selectedScenario || !user) return;
 
     const newMessages: Message[] = [...messages, { role: "user", content: input.trim() }];
     setMessages(newMessages);
@@ -96,12 +94,7 @@ export default function ScenariosPage() {
       const res = await fetch("/api/scenario", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: newMessages,
-          language: profile.targetLanguage,
-          level: profile.level,
-          scenario: selectedScenario,
-        }),
+        body: JSON.stringify({ messages: newMessages, language: user.targetLanguage, level: user.level, scenario: selectedScenario }),
       });
 
       const reader = res.body?.getReader();
@@ -127,35 +120,23 @@ export default function ScenariosPage() {
 
       setMessages(prev => [...prev, { role: "assistant", content: fullText }]);
       setStreamText("");
-      addXP(30);
-    } catch { /* ignore */ } finally {
-      setLoading(false);
-    }
+      fetch("/api/progress", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ xp: 30 }),
+      });
+    } catch { /* ignore */ } finally { setLoading(false); }
   }
 
-  const mdComponents = {
-    p: ({children}: {children: React.ReactNode}) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
-    strong: ({children}: {children: React.ReactNode}) => <strong className="font-bold text-white">{children}</strong>,
-    ul: ({children}: {children: React.ReactNode}) => <ul className="mb-3 space-y-2 list-none">{children}</ul>,
-    li: ({children}: {children: React.ReactNode}) => <li className="pl-1 leading-relaxed">{children}</li>,
-  };
+  if (!mounted) return <div className="min-h-screen" style={{ background: "#080d1a" }} />;
 
-  if (!mounted) {
-    return <div className="min-h-screen" style={{ background: "#080d1a" }} />;
-  }
-
-  if (!profile) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#080d1a" }}>
-        <div className="text-center">
-          <p className="text-slate-400 mb-4">Please complete onboarding first</p>
-          <Link href="/onboarding" className="px-6 py-3 rounded-full font-bold text-black" style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)" }}>Start →</Link>
-        </div>
+        <div className="flex gap-2"><span className="typing-dot"/><span className="typing-dot"/><span className="typing-dot"/></div>
       </div>
     );
   }
-
-  const langLabel: Record<string, string> = { arabic: "Arabic 🇸🇦", english: "English 🇺🇸", spanish: "Spanish 🇪🇸" };
 
   return (
     <div className="min-h-screen" style={{ background: "#080d1a" }}>
@@ -163,7 +144,7 @@ export default function ScenariosPage() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/dashboard" className="text-slate-400 hover:text-white transition-colors text-sm">← Dashboard</Link>
           <span className="gradient-text font-bold">Business Scenarios</span>
-          <div className="text-xs text-slate-500">{langLabel[profile.targetLanguage]}</div>
+          <div className="text-xs text-slate-500">{LANGUAGE_LABELS[user.targetLanguage]}</div>
         </div>
       </nav>
 
@@ -171,7 +152,7 @@ export default function ScenariosPage() {
         <div className="max-w-5xl mx-auto px-6 py-10">
           <div className="mb-8">
             <h1 className="text-3xl font-black mb-2">Choose Your Scenario</h1>
-            <p className="text-slate-400">Role-play real business situations in {langLabel[profile.targetLanguage]}</p>
+            <p className="text-slate-400">Role-play real business situations in {LANGUAGE_LABELS[user.targetLanguage]}</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {SCENARIOS.map((s) => (
@@ -183,14 +164,12 @@ export default function ScenariosPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex gap-2">
                     <span className="text-xs px-2 py-1 rounded-full"
-                      style={{ background: s.difficulty === "Beginner" ? "rgba(34,197,94,0.15)" : s.difficulty === "Intermediate" ? "rgba(245,158,11,0.15)" : "rgba(239,68,68,0.15)", color: s.difficulty === "Beginner" ? "#86efac" : s.difficulty === "Intermediate" ? "#fbbf24" : "#fca5a5" }}>
+                      style={{ background: s.difficulty === "Beginner" ? "rgba(34,197,94,0.15)" : s.difficulty === "Intermediate" ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)", color: s.difficulty === "Beginner" ? "#86efac" : s.difficulty === "Intermediate" ? "#34d399" : "#fca5a5" }}>
                       {s.difficulty}
                     </span>
-                    <span className="text-xs px-2 py-1 rounded-full text-slate-500" style={{ background: "rgba(255,255,255,0.06)" }}>
-                      {s.duration}
-                    </span>
+                    <span className="text-xs px-2 py-1 rounded-full text-slate-500" style={{ background: "rgba(255,255,255,0.06)" }}>{s.duration}</span>
                   </div>
-                  <span className="text-amber-400 text-sm group-hover:translate-x-1 transition-transform">→</span>
+                  <span className="text-emerald-400 text-sm group-hover:translate-x-1 transition-transform">→</span>
                 </div>
               </button>
             ))}
@@ -198,9 +177,8 @@ export default function ScenariosPage() {
         </div>
       ) : (
         <div className="flex flex-col h-[calc(100vh-64px)]">
-          {/* Scenario header */}
           <div className="px-6 py-4 max-w-3xl mx-auto w-full">
-            <div className="glass rounded-xl p-4 flex items-center justify-between" style={{ border: "1px solid rgba(245,158,11,0.2)" }}>
+            <div className="glass rounded-xl p-4 flex items-center justify-between" style={{ border: "1px solid rgba(16,185,129,0.2)" }}>
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{selectedScenario.icon}</span>
                 <div>
@@ -208,21 +186,16 @@ export default function ScenariosPage() {
                   <div className="text-xs text-slate-400">You: {selectedScenario.userRole} · AI: {selectedScenario.aiRole}</div>
                 </div>
               </div>
-              <button onClick={() => setSelectedScenario(null)} className="text-xs text-slate-500 hover:text-slate-300 transition-colors px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
-                Exit
-              </button>
+              <button onClick={() => setSelectedScenario(null)} className="text-xs text-slate-500 hover:text-slate-300 transition-colors px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>Exit</button>
             </div>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto px-6 pb-4 max-w-3xl mx-auto w-full">
             <div className="space-y-4">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   {msg.role === "assistant" && (
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0 mt-1 text-xl">
-                      {selectedScenario.icon}
-                    </div>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xl mr-2 flex-shrink-0 mt-1">{selectedScenario.icon}</div>
                   )}
                   <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
                     style={msg.role === "user"
@@ -245,7 +218,7 @@ export default function ScenariosPage() {
                 <div className="flex justify-start">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-xl mr-2">{selectedScenario.icon}</div>
                   <div className="rounded-2xl px-4 py-4 flex items-center gap-2" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                    <span className="typing-dot"></span><span className="typing-dot"></span><span className="typing-dot"></span>
+                    <span className="typing-dot"/><span className="typing-dot"/><span className="typing-dot"/>
                   </div>
                 </div>
               )}
@@ -253,7 +226,6 @@ export default function ScenariosPage() {
             </div>
           </div>
 
-          {/* Input */}
           <div className="glass border-t px-6 py-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
             <div className="max-w-3xl mx-auto flex items-end gap-3">
               <textarea value={input} onChange={(e) => setInput(e.target.value)}
@@ -265,9 +237,7 @@ export default function ScenariosPage() {
               />
               <button onClick={sendMessage} disabled={!input.trim() || loading}
                 className="w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold transition-all disabled:opacity-40 hover:scale-110 flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)", color: "black" }}>
-                ↑
-              </button>
+                style={{ background: "linear-gradient(135deg, #10b981, #059669)", color: "black" }}>↑</button>
             </div>
           </div>
         </div>

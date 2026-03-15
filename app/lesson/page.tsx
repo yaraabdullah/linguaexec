@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getProfile, addXP, addWordsLearned, addLessonCompleted } from "@/lib/storage";
 
 const TOPICS = ["Greetings & Introductions", "Business Meetings", "Travel & Dining", "Negotiations", "Presentations", "Small Talk", "Emails & Writing"];
 
@@ -16,15 +15,17 @@ interface LessonData {
   culturalTip: string; quiz: Quiz[];
 }
 
+interface UserData { name: string; targetLanguage: string; level: string; }
+
 export default function LessonPage() {
-  const [profile, setProfile] = useState<ReturnType<typeof getProfile> | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [mounted, setMounted] = useState(false);
   const [topic] = useState(() => TOPICS[new Date().getDay() % TOPICS.length]);
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setProfile(getProfile());
+    fetch("/api/progress").then(r => r.json()).then(setUser).catch(console.error);
     setMounted(true);
   }, []);
   const [tab, setTab] = useState<"vocab" | "phrases" | "grammar" | "quiz">("vocab");
@@ -33,13 +34,13 @@ export default function LessonPage() {
   const [completed, setCompleted] = useState(false);
 
   async function loadLesson() {
-    if (!profile) return;
+    if (!user) return;
     setLoading(true);
     try {
       const res = await fetch("/api/lesson", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language: profile.targetLanguage, level: profile.level, topic }),
+        body: JSON.stringify({ language: user.targetLanguage, level: user.level, topic }),
       });
       const data = await res.json();
       if (!res.ok || data.error || !data.vocabulary) throw new Error(data.error || "Invalid lesson data");
@@ -51,15 +52,18 @@ export default function LessonPage() {
     }
   }
 
-  useEffect(() => { if (profile) loadLesson(); }, [profile]); // eslint-disable-line
+  useEffect(() => { if (user) loadLesson(); }, [user]); // eslint-disable-line
 
   function handleQuizSubmit() {
     setQuizSubmitted(true);
     if (!lesson) return;
     const correct = quizAnswers.filter((a, i) => a === lesson.quiz[i]?.correct).length;
-    addXP(correct * 50 + 100);
-    addWordsLearned(lesson.vocabulary.length);
-    addLessonCompleted();
+    const xpEarned = correct * 50 + 100;
+    fetch("/api/progress", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ xp: xpEarned, wordsLearned: lesson.vocabulary.length, lessonCompleted: true }),
+    });
     setCompleted(true);
   }
 
@@ -67,13 +71,10 @@ export default function LessonPage() {
     return <div className="min-h-screen" style={{ background: "#080d1a" }} />;
   }
 
-  if (!profile) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#080d1a" }}>
-        <div className="text-center">
-          <p className="text-slate-400 mb-4">Please complete onboarding first</p>
-          <Link href="/onboarding" className="px-6 py-3 rounded-full font-bold text-black" style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)" }}>Start →</Link>
-        </div>
+        <div className="flex gap-2"><span className="typing-dot"/><span className="typing-dot"/><span className="typing-dot"/></div>
       </div>
     );
   }
@@ -86,7 +87,7 @@ export default function LessonPage() {
             ← Dashboard
           </Link>
           <span className="gradient-text font-bold">Today&apos;s Lesson</span>
-          <div className="text-sm text-slate-500">{profile.targetLanguage} · {profile.level}</div>
+          <div className="text-sm text-slate-500">{user.targetLanguage} · {user.level}</div>
         </div>
       </nav>
 

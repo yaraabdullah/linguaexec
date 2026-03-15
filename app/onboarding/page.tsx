@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveProfile, saveProgress } from "@/lib/storage";
 
 const STEPS = ["language", "level", "goals", "time", "name"] as const;
 type Step = typeof STEPS[number];
@@ -28,13 +27,8 @@ const TIMES = [5, 10, 15, 20, 30];
 export default function Onboarding() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("language");
-  const [form, setForm] = useState({
-    language: "",
-    level: "",
-    goals: [] as string[],
-    time: 10,
-    name: "",
-  });
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ language: "", level: "", goals: [] as string[], time: 10, name: "" });
 
   const stepIndex = STEPS.indexOf(step);
   const progress = ((stepIndex + 1) / STEPS.length) * 100;
@@ -45,40 +39,36 @@ export default function Onboarding() {
     else finish();
   }
 
-  function finish() {
-    saveProfile({
-      name: form.name || "Executive",
-      targetLanguage: form.language as "arabic" | "english" | "spanish",
-      nativeLanguage: "English",
-      level: form.level as "beginner" | "intermediate" | "advanced",
-      goals: form.goals,
-      dailyMinutes: form.time,
-      joinedAt: new Date().toISOString(),
-    });
-    saveProgress({
-      streak: 1,
-      lastActiveDate: new Date().toISOString(),
-      wordsLearned: 0,
-      lessonsCompleted: 0,
-      minutesPracticed: 0,
-      currentLevel: 1,
-      xp: 0,
-    });
-    router.push("/dashboard");
+  async function finish() {
+    setLoading(true);
+    try {
+      await fetch("/api/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name || "Executive",
+          targetLanguage: form.language,
+          nativeLanguage: "English",
+          level: form.level,
+          goals: form.goals,
+          dailyMinutes: form.time,
+        }),
+      });
+      router.push("/dashboard");
+    } catch {
+      setLoading(false);
+    }
   }
 
   const canContinue = () => {
     if (step === "language") return form.language !== "";
     if (step === "level") return form.level !== "";
     if (step === "goals") return form.goals.length > 0;
-    if (step === "time") return true;
-    if (step === "name") return true;
-    return false;
+    return true;
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 py-16" style={{ background: "#080d1a" }}>
-      {/* Header */}
       <div className="text-center mb-10 animate-fade-in-up">
         <div className="flex items-center justify-center gap-2 mb-3">
           <span className="text-2xl">🌐</span>
@@ -86,11 +76,11 @@ export default function Onboarding() {
         </div>
         <p className="text-slate-400 text-sm">Step {stepIndex + 1} of {STEPS.length}</p>
         <div className="w-64 h-1 rounded-full mt-3 mx-auto" style={{ background: "rgba(255,255,255,0.1)" }}>
-          <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: "linear-gradient(90deg, #f59e0b, #f97316)" }} />
+          <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: "linear-gradient(90deg, #10b981, #059669)" }} />
         </div>
       </div>
 
-      <div className="w-full max-w-lg glass rounded-3xl p-8 animate-fade-in-up" style={{ border: "1px solid rgba(245,158,11,0.2)" }}>
+      <div className="w-full max-w-lg glass rounded-3xl p-8 animate-fade-in-up" style={{ border: "1px solid rgba(16,185,129,0.2)" }}>
         {step === "language" && (
           <div>
             <h2 className="text-2xl font-black mb-2">What language do you want to master?</h2>
@@ -98,14 +88,16 @@ export default function Onboarding() {
             <div className="space-y-3">
               {LANGUAGES.map((lang) => (
                 <button key={lang.id} onClick={() => setForm(f => ({ ...f, language: lang.id }))}
-                  className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left ${form.language === lang.id ? "gold-border gold-glow" : "glass glass-hover"}`}
-                  style={form.language === lang.id ? { background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.5)" } : {}}>
+                  className="w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left"
+                  style={form.language === lang.id
+                    ? { background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.5)" }
+                    : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <span className="text-3xl">{lang.flag}</span>
                   <div>
                     <div className="font-bold">{lang.name} <span className="text-slate-400 font-normal text-sm">· {lang.native}</span></div>
                     <div className="text-xs text-slate-500">{lang.desc}</div>
                   </div>
-                  {form.language === lang.id && <span className="ml-auto text-amber-400">✓</span>}
+                  {form.language === lang.id && <span className="ml-auto text-emerald-400">✓</span>}
                 </button>
               ))}
             </div>
@@ -119,14 +111,16 @@ export default function Onboarding() {
             <div className="space-y-3">
               {LEVELS.map((l) => (
                 <button key={l.id} onClick={() => setForm(f => ({ ...f, level: l.id }))}
-                  className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left`}
-                  style={form.level === l.id ? { background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.5)" } : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  className="w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left"
+                  style={form.level === l.id
+                    ? { background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.5)" }
+                    : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <span className="text-2xl">{l.icon}</span>
                   <div>
                     <div className="font-bold">{l.label}</div>
                     <div className="text-xs text-slate-500">{l.desc}</div>
                   </div>
-                  {form.level === l.id && <span className="ml-auto text-amber-400">✓</span>}
+                  {form.level === l.id && <span className="ml-auto text-emerald-400">✓</span>}
                 </button>
               ))}
             </div>
@@ -146,7 +140,7 @@ export default function Onboarding() {
                   }))}
                     className="px-4 py-2 rounded-full text-sm transition-all"
                     style={selected
-                      ? { background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.6)", color: "#fbbf24" }
+                      ? { background: "rgba(16,185,129,0.2)", border: "1px solid rgba(16,185,129,0.6)", color: "#34d399" }
                       : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#94a3b8" }}>
                     {selected ? "✓ " : ""}{g}
                   </button>
@@ -165,13 +159,13 @@ export default function Onboarding() {
                 <button key={t} onClick={() => setForm(f => ({ ...f, time: t }))}
                   className="px-6 py-4 rounded-xl text-2xl font-black transition-all"
                   style={form.time === t
-                    ? { background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.6)", color: "#fbbf24" }
+                    ? { background: "rgba(16,185,129,0.2)", border: "1px solid rgba(16,185,129,0.6)", color: "#34d399" }
                     : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#94a3b8" }}>
                   {t}<span className="text-sm font-normal">m</span>
                 </button>
               ))}
             </div>
-            <p className="mt-4 text-sm text-slate-400">Selected: <span className="text-amber-400 font-bold">{form.time} minutes/day</span></p>
+            <p className="mt-4 text-sm text-slate-400">Selected: <span className="text-emerald-400 font-bold">{form.time} minutes/day</span></p>
           </div>
         )}
 
@@ -192,10 +186,10 @@ export default function Onboarding() {
           </div>
         )}
 
-        <button onClick={next} disabled={!canContinue()}
+        <button onClick={next} disabled={!canContinue() || loading}
           className="mt-8 w-full py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02]"
-          style={{ background: canContinue() ? "linear-gradient(135deg, #f59e0b, #f97316)" : "rgba(255,255,255,0.1)", color: canContinue() ? "black" : "gray" }}>
-          {step === "name" ? "🚀 Start Learning" : "Continue →"}
+          style={{ background: canContinue() ? "linear-gradient(135deg, #10b981, #059669)" : "rgba(255,255,255,0.1)", color: canContinue() ? "black" : "gray" }}>
+          {loading ? "Setting up..." : step === "name" ? "🚀 Start Learning" : "Continue →"}
         </button>
       </div>
     </div>
