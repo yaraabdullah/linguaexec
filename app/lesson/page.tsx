@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-import { TOPICS, getTodayTopic } from "@/lib/topics";
+import { TOPICS, getUserTopic, getTopicLevel } from "@/lib/topics";
 
 // Map app language keys → Google Translate TTS lang codes
 const LANG_CODES: Record<string, string> = {
@@ -68,7 +68,8 @@ function SpeakButton({ text, langCode }: { text: string; langCode: string }) {
 function LessonContent() {
   const searchParams = useSearchParams();
   const topicParam = searchParams.get("topic");
-  const topic = topicParam && TOPICS.includes(topicParam) ? topicParam : getTodayTopic();
+  // Use URL param if it's a known topic; otherwise fall back to user's current curriculum position
+  const topic = topicParam && TOPICS.includes(topicParam) ? topicParam : (user ? getUserTopic(user.lessonsCompleted) : (topicParam ?? TOPICS[0]));
 
   const [user, setUser] = useState<UserData | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -167,7 +168,15 @@ function LessonContent() {
 
       <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="mb-8">
-          <div className="text-emerald-400 text-sm font-semibold mb-1 uppercase tracking-wider">📖 Topic {topicIndex + 1} of {TOPICS.length}</div>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-emerald-400 text-sm font-semibold uppercase tracking-wider">📖 Lesson {topicIndex + 1} of {TOPICS.length}</div>
+            {(() => {
+              const lv = getTopicLevel(topicIndex);
+              const colors = { Beginner: { bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.35)", text: "#34d399" }, Intermediate: { bg: "rgba(59,130,246,0.15)", border: "rgba(59,130,246,0.35)", text: "#60a5fa" }, Advanced: { bg: "rgba(168,85,247,0.15)", border: "rgba(168,85,247,0.35)", text: "#c084fc" } };
+              const c = colors[lv];
+              return <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>{lv}</span>;
+            })()}
+          </div>
           <h1 className="text-3xl font-black">{topic}</h1>
           {lesson && <p className="text-slate-400 mt-1">{lesson.subtitle}</p>}
         </div>

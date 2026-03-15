@@ -3,12 +3,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { getTodayTopic, getUpcomingSchedule, TOPICS } from "@/lib/topics";
+import { getUserTopic, getLastCompletedTopic, getUpcomingSchedule, TOPICS, getTopicLevel } from "@/lib/topics";
 
 const LANGUAGE_LABELS: Record<string, string> = {
   arabic: "Arabic 🇸🇦", english: "English 🇺🇸", spanish: "Spanish 🇪🇸",
   french: "French 🇫🇷", german: "German 🇩🇪", mandarin: "Mandarin 🇨🇳",
   japanese: "Japanese 🇯🇵", portuguese: "Portuguese 🇧🇷", italian: "Italian 🇮🇹",
+};
+
+const LEVEL_COLORS = {
+  Beginner:     { bg: "rgba(16,185,129,0.15)",  border: "rgba(16,185,129,0.35)",  text: "#34d399" },
+  Intermediate: { bg: "rgba(59,130,246,0.15)",  border: "rgba(59,130,246,0.35)",  text: "#60a5fa" },
+  Advanced:     { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.35)",  text: "#c084fc" },
 };
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -24,8 +30,6 @@ export default function Dashboard() {
   const [user, setUser] = useState<UserData | null>(null);
   const [customTopic, setCustomTopic] = useState("");
   const router = useRouter();
-  const todayTopic = getTodayTopic();
-  const schedule = getUpcomingSchedule(7); // today + next 6 days
 
   useEffect(() => {
     fetch("/api/progress").then(r => r.json()).then(setUser).catch(console.error);
@@ -34,6 +38,26 @@ export default function Dashboard() {
   const langName = user ? (LANGUAGE_LABELS[user.targetLanguage] || user.targetLanguage) : "Your Language";
   const xpToNext = user ? 500 - (user.xp % 500) : 500;
   const xpPercent = user ? ((user.xp % 500) / 500) * 100 : 0;
+
+  // Topic logic: personal curriculum based on user's lesson count
+  // When done today → lessonsCompleted was already incremented, so show the COMPLETED topic
+  // When not done  → show the NEXT topic to tackle
+  const todayTopic = user
+    ? (user.todaysDone ? getLastCompletedTopic(user.lessonsCompleted) : getUserTopic(user.lessonsCompleted))
+    : "";
+
+  // Schedule: when done → start from completed lesson (so today column shows what was done)
+  //           when not done → start from current lesson
+  const scheduleStart = user
+    ? (user.todaysDone ? user.lessonsCompleted - 1 : user.lessonsCompleted)
+    : 0;
+  const schedule = user ? getUpcomingSchedule(scheduleStart, 7) : [];
+
+  // Curriculum progress
+  const totalTopics = TOPICS.length;
+  const currentIdx = user ? user.lessonsCompleted % totalTopics : 0;
+  const curriculumPercent = (currentIdx / totalTopics) * 100;
+  const curriculumLevel = getTopicLevel(currentIdx);
 
   if (!user) {
     return (
@@ -47,6 +71,8 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const levelColors = LEVEL_COLORS[curriculumLevel];
 
   return (
     <div className="min-h-screen" style={{ background: "#080d1a" }}>
@@ -96,7 +122,7 @@ export default function Dashboard() {
         </div>
 
         {/* XP bar */}
-        <div className="glass rounded-2xl p-6 mb-8" style={{ border: "1px solid rgba(16,185,129,0.15)" }}>
+        <div className="glass rounded-2xl p-6 mb-6" style={{ border: "1px solid rgba(16,185,129,0.15)" }}>
           <div className="flex items-center justify-between mb-3">
             <div>
               <span className="text-sm text-slate-400">Level {user.currentLevel}</span>
@@ -110,6 +136,29 @@ export default function Dashboard() {
           <div className="h-2 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
             <div className="h-2 rounded-full transition-all duration-1000"
               style={{ width: `${xpPercent}%`, background: "linear-gradient(90deg, #10b981, #059669)" }} />
+          </div>
+        </div>
+
+        {/* Curriculum progress bar */}
+        <div className="glass rounded-2xl p-5 mb-8" style={{ border: `1px solid ${levelColors.border}` }}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: levelColors.bg, color: levelColors.text, border: `1px solid ${levelColors.border}` }}>
+                {curriculumLevel}
+              </span>
+              <span className="text-sm text-slate-300 font-medium">Curriculum Progress</span>
+            </div>
+            <span className="text-xs text-slate-500">Lesson {currentIdx + 1} of {totalTopics}</span>
+          </div>
+          <div className="h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <div className="h-1.5 rounded-full transition-all duration-1000"
+              style={{ width: `${curriculumPercent}%`, background: `linear-gradient(90deg, ${levelColors.text}, ${levelColors.text}88)` }} />
+          </div>
+          <div className="flex justify-between mt-1.5">
+            <span className="text-xs text-slate-600">Beginner</span>
+            <span className="text-xs text-slate-600">Intermediate</span>
+            <span className="text-xs text-slate-600">Advanced</span>
           </div>
         </div>
 
@@ -130,10 +179,16 @@ export default function Dashboard() {
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl"
                   style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)" }}>✅</div>
               </div>
-              <Link href={`/lesson?topic=${encodeURIComponent(todayTopic)}`}
-                className="text-sm text-slate-500 hover:text-emerald-400 transition-colors">
-                Review today&apos;s lesson →
-              </Link>
+              <div className="flex items-center gap-4 flex-wrap">
+                <Link href={`/lesson?topic=${encodeURIComponent(todayTopic)}`}
+                  className="text-sm text-slate-500 hover:text-emerald-400 transition-colors">
+                  Review today&apos;s lesson →
+                </Link>
+                <span className="text-slate-700 text-xs">|</span>
+                <span className="text-sm text-slate-500">
+                  Next up: <span className="text-slate-300">{getUserTopic(user.lessonsCompleted)}</span>
+                </span>
+              </div>
             </div>
           ) : (
             // Not done yet
@@ -142,9 +197,15 @@ export default function Dashboard() {
               style={{ border: "1px solid rgba(16,185,129,0.2)" }}>
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <div className="text-xs text-emerald-400 font-semibold mb-1 uppercase tracking-wider">Today&apos;s Lesson</div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="text-xs text-emerald-400 font-semibold uppercase tracking-wider">Today&apos;s Lesson</div>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                      style={{ background: levelColors.bg, color: levelColors.text, border: `1px solid ${levelColors.border}` }}>
+                      {curriculumLevel}
+                    </span>
+                  </div>
                   <h2 className="text-xl font-black">{todayTopic}</h2>
-                  <p className="text-slate-400 text-sm mt-1">In {langName} · ~10 min</p>
+                  <p className="text-slate-400 text-sm mt-1">In {langName} · ~10 min · Lesson {currentIdx + 1}/{totalTopics}</p>
                 </div>
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl"
                   style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)" }}>📖</div>
@@ -175,31 +236,39 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Weekly schedule */}
+        {/* Upcoming schedule */}
         <div className="glass rounded-2xl p-6 mb-8">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="font-bold text-slate-300">This Week&apos;s Schedule</h3>
-            <span className="text-xs text-slate-500">New lesson every day</span>
+            <h3 className="font-bold text-slate-300">Upcoming Schedule</h3>
+            <span className="text-xs text-slate-500">One lesson per day</span>
           </div>
           <div className="grid grid-cols-7 gap-2">
-            {schedule.map(({ date, topic, isToday }) => (
-              <Link key={date.toISOString()} href={`/lesson?topic=${encodeURIComponent(topic)}`}
-                className="text-center group"
-                style={{ pointerEvents: isToday ? "auto" : "none" }}>
-                <div className="text-xs text-slate-500 mb-2">{DAY_NAMES[date.getDay()]}</div>
-                <div className="text-xs text-slate-600 mb-2">{date.getDate()}</div>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mx-auto mb-2 transition-all ${isToday ? "ring-2 ring-emerald-400" : ""}`}
-                  style={isToday && user.todaysDone ? { background: "linear-gradient(135deg, #10b981, #059669)", color: "black" }
-                    : isToday ? { background: "rgba(16,185,129,0.2)", color: "#10b981" }
-                    : { background: "rgba(255,255,255,0.05)", color: "#475569" }}>
-                  {isToday && user.todaysDone ? "✓" : TOPICS.indexOf(topic) + 1}
-                </div>
-                <div className={`text-xs leading-tight ${isToday ? "text-slate-300 font-medium" : "text-slate-600"}`}
-                  style={{ fontSize: "10px" }}>
-                  {topic.split(" ")[0]}
-                </div>
-              </Link>
-            ))}
+            {schedule.map(({ date, topic, isToday, lessonNumber }) => {
+              const tIdx = TOPICS.indexOf(topic);
+              const lv = getTopicLevel(tIdx);
+              const lc = LEVEL_COLORS[lv];
+              const isDone = isToday && user.todaysDone;
+              return (
+                <Link key={date.toISOString()} href={`/lesson?topic=${encodeURIComponent(topic)}`}
+                  className="text-center group"
+                  style={{ pointerEvents: isToday && !user.todaysDone ? "auto" : "none" }}>
+                  <div className="text-xs text-slate-500 mb-1">{DAY_NAMES[date.getDay()]}</div>
+                  <div className="text-xs text-slate-600 mb-2">{date.getDate()}</div>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mx-auto mb-2 transition-all ${isToday ? "ring-2" : ""}`}
+                    style={isDone
+                      ? { background: "linear-gradient(135deg, #10b981, #059669)", color: "black", ringColor: "#10b981" }
+                      : isToday
+                        ? { background: lc.bg, color: lc.text, outline: `2px solid ${lc.text}`, outlineOffset: "2px" }
+                        : { background: "rgba(255,255,255,0.04)", color: "#334155" }}>
+                    {isDone ? "✓" : lessonNumber}
+                  </div>
+                  <div className={`leading-tight ${isToday ? "text-slate-300 font-medium" : "text-slate-600"}`}
+                    style={{ fontSize: "9px" }}>
+                    {topic.split(" ")[0]}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -226,7 +295,7 @@ export default function Dashboard() {
             <button
               onClick={() => { if (customTopic.trim()) router.push(`/custom-lesson?topic=${encodeURIComponent(customTopic.trim())}`); }}
               disabled={!customTopic.trim()}
-              className="px-6 py-3 rounded-xl text-sm font-semibold text-black transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ background: "linear-gradient(135deg, #a855f7, #7c3aed)" }}>
               Generate →
             </button>
