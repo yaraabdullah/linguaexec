@@ -7,7 +7,11 @@ import Link from "next/link";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const rawCallback = searchParams.get("callbackUrl") || "/dashboard";
+  // Strip host/port — only keep the pathname so we never redirect to a stale localhost URL
+  const callbackUrl = (() => {
+    try { return new URL(rawCallback).pathname; } catch { return rawCallback.startsWith("/") ? rawCallback : "/dashboard"; }
+  })();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);

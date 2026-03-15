@@ -15,7 +15,12 @@ export const authConfig: NextAuthConfig = {
       const isProtected = protectedRoutes.some((r) => pathname.startsWith(r));
       const isAuthRoute = authRoutes.some((r) => pathname.startsWith(r));
 
-      if (isProtected && !isLoggedIn) return false;
+      if (isProtected && !isLoggedIn) {
+        // Redirect to /login with only the pathname as callbackUrl (no host/port)
+        const loginUrl = new URL("/login", nextUrl);
+        loginUrl.searchParams.set("callbackUrl", pathname);
+        return Response.redirect(loginUrl);
+      }
       if (isAuthRoute && isLoggedIn) {
         return Response.redirect(new URL("/dashboard", nextUrl));
       }
