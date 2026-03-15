@@ -84,7 +84,7 @@ export default function Dashboard() {
           </Link>
           <div className="flex items-center gap-5">
             <Link href="/conversation" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Conversation</Link>
-            <Link href="/what-to-say" className="text-sm text-slate-400 hover:text-amber-400 transition-colors">Quick Reply</Link>
+            <Link href="/what-to-say" className="text-sm text-slate-400 hover:text-cyan-400 transition-colors">Quick Reply</Link>
             <Link href="/scenarios" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Scenarios</Link>
             <Link href="/dictionary" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Dictionary</Link>
             <Link href="/leaderboard" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Leaderboard</Link>

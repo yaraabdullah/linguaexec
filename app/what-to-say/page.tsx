@@ -10,8 +10,8 @@ const LANG_CODES: Record<string, string> = {
 
 const TONE_STYLES: Record<string, { bg: string; border: string; text: string }> = {
   Formal:   { bg: "rgba(59,130,246,0.12)",  border: "rgba(59,130,246,0.3)",  text: "#60a5fa" },
-  Casual:   { bg: "rgba(251,146,60,0.12)",  border: "rgba(251,146,60,0.3)",  text: "#fb923c" },
-  Polite:   { bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.3)",  text: "#34d399" },
+  Casual:   { bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.3)",  text: "#34d399" },
+  Polite:   { bg: "rgba(6,182,212,0.12)",   border: "rgba(6,182,212,0.3)",   text: "#22d3ee" },
   Friendly: { bg: "rgba(168,85,247,0.12)",  border: "rgba(168,85,247,0.3)",  text: "#c084fc" },
 };
 
@@ -61,18 +61,18 @@ function SpeakButton({ text, langCode }: { text: string; langCode: string }) {
     <button onClick={speak} title="Listen"
       className="flex items-center justify-center rounded-full flex-shrink-0 transition-all"
       style={{ width: 38, height: 38,
-        background: speaking ? "rgba(245,158,11,0.3)" : "rgba(245,158,11,0.12)",
-        border: speaking ? "1px solid #f59e0b" : "1px solid rgba(245,158,11,0.3)" }}>
+        background: speaking ? "rgba(6,182,212,0.3)" : "rgba(6,182,212,0.1)",
+        border: speaking ? "1px solid #06b6d4" : "1px solid rgba(6,182,212,0.25)" }}>
       {speaking ? (
         <span className="flex items-end gap-[2px] h-4">
           {[1,2,3].map(i => (
             <span key={i} className="w-[3px] rounded-full"
-              style={{ background: "#f59e0b", height: `${i*4+4}px`,
+              style={{ background: "#22d3ee", height: `${i*4+4}px`,
                 animation: `bounce ${0.4+i*0.1}s ease-in-out infinite alternate` }} />
           ))}
         </span>
       ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
           <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
           <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
@@ -132,7 +132,7 @@ export default function WhatToSayPage() {
           <Link href="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
             ← Dashboard
           </Link>
-          <span className="font-bold" style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          <span className="font-bold" style={{ background: "linear-gradient(135deg, #06b6d4, #0891b2)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             What Should I Say?
           </span>
           <div className="text-sm text-slate-500">{user?.targetLanguage ?? "…"}</div>
@@ -150,8 +150,8 @@ export default function WhatToSayPage() {
         </div>
 
         {/* Input area */}
-        <div className="glass rounded-2xl p-6 mb-6" style={{ border: "1px solid rgba(245,158,11,0.2)" }}>
-          <label className="block text-xs text-amber-400 font-semibold uppercase tracking-wider mb-3">
+        <div className="glass rounded-2xl p-6 mb-6" style={{ border: "1px solid rgba(6,182,212,0.2)" }}>
+          <label className="block text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "#22d3ee" }}>
             🎯 Describe the situation
           </label>
           <textarea
@@ -168,8 +168,8 @@ export default function WhatToSayPage() {
             <button
               onClick={handleSubmit}
               disabled={!situation.trim() || loading}
-              className="px-6 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)", color: "black" }}>
+              className="px-6 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed text-white"
+              style={{ background: "linear-gradient(135deg, #06b6d4, #0891b2)" }}>
               {loading ? "Thinking…" : "Get Responses →"}
             </button>
           </div>
@@ -182,7 +182,7 @@ export default function WhatToSayPage() {
             {EXAMPLE_SCENARIOS.map(s => (
               <button key={s} onClick={() => useExample(s)}
                 className="text-xs px-3 py-1.5 rounded-full transition-colors text-left"
-                style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)", color: "#fbbf24" }}>
+                style={{ background: "rgba(6,182,212,0.07)", border: "1px solid rgba(6,182,212,0.18)", color: "#67e8f9" }}>
                 {s.length > 50 ? s.slice(0, 50) + "…" : s}
               </button>
             ))}
@@ -205,8 +205,8 @@ export default function WhatToSayPage() {
           <div className="glass rounded-2xl p-8 text-center mb-8" style={{ border: "1px solid rgba(239,68,68,0.3)" }}>
             <div className="text-3xl mb-3">⚠️</div>
             <p className="text-slate-400 mb-4">Couldn&apos;t generate a response. Please try again.</p>
-            <button onClick={handleSubmit} className="px-5 py-2 rounded-full text-sm font-bold"
-              style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)", color: "black" }}>
+            <button onClick={handleSubmit} className="px-5 py-2 rounded-full text-sm font-bold text-white"
+              style={{ background: "linear-gradient(135deg, #06b6d4, #0891b2)" }}>
               Retry →
             </button>
           </div>
@@ -217,8 +217,8 @@ export default function WhatToSayPage() {
           <div className="mb-8">
             {/* Situation summary */}
             <div className="mb-5 px-4 py-3 rounded-xl text-sm text-slate-300 flex items-start gap-2"
-              style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.15)" }}>
-              <span className="text-amber-400 flex-shrink-0">📌</span>
+              style={{ background: "rgba(6,182,212,0.06)", border: "1px solid rgba(6,182,212,0.15)" }}>
+              <span className="flex-shrink-0" style={{ color: "#22d3ee" }}>📌</span>
               <span>{result.situationSummary}</span>
             </div>
 
@@ -254,7 +254,7 @@ export default function WhatToSayPage() {
                           </span>
                         </div>
                         <div className="text-sm font-semibold px-3 py-1 rounded-full inline-block mb-2"
-                          style={{ background: "rgba(245,158,11,0.12)", color: "#fcd34d", border: "1px solid rgba(245,158,11,0.2)" }}>
+                          style={{ background: "rgba(6,182,212,0.1)", color: "#67e8f9", border: "1px solid rgba(6,182,212,0.2)" }}>
                           🔊 {r.pronunciation}
                         </div>
                         <div className="text-emerald-400 font-semibold text-sm mb-2">{r.translation}</div>
@@ -274,7 +274,7 @@ export default function WhatToSayPage() {
             <button
               onClick={() => { setSituation(""); setResult(null); }}
               className="mt-6 w-full py-3 rounded-xl text-sm font-semibold transition-all glass glass-hover"
-              style={{ border: "1px solid rgba(245,158,11,0.2)", color: "#fbbf24" }}>
+              style={{ border: "1px solid rgba(6,182,212,0.2)", color: "#22d3ee" }}>
               + Ask about another situation
             </button>
           </div>
