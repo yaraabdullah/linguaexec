@@ -84,6 +84,7 @@ export default function Dashboard() {
           </Link>
           <div className="flex items-center gap-5">
             <Link href="/conversation" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Conversation</Link>
+            <Link href="/what-to-say" className="text-sm text-slate-400 hover:text-amber-400 transition-colors">Quick Reply</Link>
             <Link href="/scenarios" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Scenarios</Link>
             <Link href="/dictionary" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Dictionary</Link>
             <Link href="/leaderboard" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Leaderboard</Link>
@@ -218,6 +219,12 @@ export default function Dashboard() {
 
           {/* Quick actions */}
           <div className="space-y-3">
+            <Link href="/what-to-say" className="glass rounded-xl p-4 flex items-center gap-4 glass-hover block"
+              style={{ border: "1px solid rgba(245,158,11,0.2)" }}>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
+                style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}>💬</div>
+              <div><div className="font-semibold text-sm">What Should I Say?</div><div className="text-xs text-slate-500">Get instant phrase help</div></div>
+            </Link>
             <Link href="/conversation" className="glass rounded-xl p-4 flex items-center gap-4 glass-hover block">
               <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
                 style={{ background: "rgba(59,130,246,0.2)", border: "1px solid rgba(59,130,246,0.3)" }}>🗣️</div>
@@ -227,11 +234,6 @@ export default function Dashboard() {
               <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
                 style={{ background: "rgba(168,85,247,0.2)", border: "1px solid rgba(168,85,247,0.3)" }}>💼</div>
               <div><div className="font-semibold text-sm">Business Scenarios</div><div className="text-xs text-slate-500">Role-play situations</div></div>
-            </Link>
-            <Link href="/dictionary" className="glass rounded-xl p-4 flex items-center gap-4 glass-hover block">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
-                style={{ background: "rgba(16,185,129,0.2)", border: "1px solid rgba(16,185,129,0.3)" }}>📖</div>
-              <div><div className="font-semibold text-sm">My Dictionary</div><div className="text-xs text-slate-500">{user.wordsLearned} words saved</div></div>
             </Link>
           </div>
         </div>
