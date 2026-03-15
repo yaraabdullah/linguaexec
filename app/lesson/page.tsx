@@ -22,7 +22,7 @@ interface LessonData {
   grammar: { rule: string; explanation: string; examples: (string | GrammarExample)[] };
   culturalTip: string; quiz: Quiz[];
 }
-interface UserData { name: string; targetLanguage: string; level: string; }
+interface UserData { name: string; targetLanguage: string; level: string; lessonsCompleted: number; }
 
 function SpeakButton({ text, langCode }: { text: string; langCode: string }) {
   const [speaking, setSpeaking] = useState(false);
