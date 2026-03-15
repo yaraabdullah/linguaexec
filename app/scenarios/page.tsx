@@ -133,6 +133,13 @@ export default function ScenariosPage() {
     }
   }
 
+  const mdComponents = {
+    p: ({children}: {children: React.ReactNode}) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
+    strong: ({children}: {children: React.ReactNode}) => <strong className="font-bold text-white">{children}</strong>,
+    ul: ({children}: {children: React.ReactNode}) => <ul className="mb-3 space-y-2 list-none">{children}</ul>,
+    li: ({children}: {children: React.ReactNode}) => <li className="pl-1 leading-relaxed">{children}</li>,
+  };
+
   if (!mounted) {
     return <div className="min-h-screen" style={{ background: "#080d1a" }} />;
   }
@@ -221,7 +228,7 @@ export default function ScenariosPage() {
                     style={msg.role === "user"
                       ? { background: "linear-gradient(135deg, #1d4ed8, #2563eb)", color: "white" }
                       : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#e2e8f0" }}>
-                    {msg.role === "assistant" ? <ReactMarkdown>{msg.content}</ReactMarkdown> : msg.content}
+                    {msg.role === "assistant" ? <ReactMarkdown components={mdComponents}>{msg.content}</ReactMarkdown> : msg.content}
                   </div>
                 </div>
               ))}
@@ -230,7 +237,7 @@ export default function ScenariosPage() {
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-xl mr-2 flex-shrink-0 mt-1">{selectedScenario.icon}</div>
                   <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
                     style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#e2e8f0" }}>
-                    <ReactMarkdown>{streamText}</ReactMarkdown><span className="cursor-blink ml-0.5">▋</span>
+                    <ReactMarkdown components={mdComponents}>{streamText}</ReactMarkdown><span className="cursor-blink ml-0.5">▋</span>
                   </div>
                 </div>
               )}
