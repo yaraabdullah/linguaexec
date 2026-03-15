@@ -59,6 +59,7 @@ model User {
   currentLevel     Int      @default(1)
   xp               Int      @default(0)
   completedTopics  String[]
+  lastLessonDate   DateTime?
   accounts    Account[]
   sessions    Session[]
   savedWords  SavedWord[]

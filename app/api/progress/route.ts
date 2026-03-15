@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { isToday } from "@/lib/topics";
 
 export async function GET() {
   const session = await auth();
@@ -16,6 +17,7 @@ export async function GET() {
       streak: true, lastActiveDate: true, wordsLearned: true,
       lessonsCompleted: true, minutesPracticed: true,
       currentLevel: true, xp: true, completedTopics: true,
+      lastLessonDate: true,
     },
   });
 
@@ -35,7 +37,9 @@ export async function GET() {
     await prisma.user.update({ where: { id: session.user.id }, data: { streak: 1, lastActiveDate: new Date() } });
   }
 
-  return NextResponse.json({ ...user, streak });
+  const todaysDone = user.lastLessonDate ? isToday(new Date(user.lastLessonDate)) : false;
+
+  return NextResponse.json({ ...user, streak, todaysDone });
 }
 
 export async function PATCH(req: Request) {
@@ -57,6 +61,7 @@ export async function PATCH(req: Request) {
   if (body.lessonCompleted) {
     updates.lessonsCompleted = { increment: 1 };
     updates.minutesPracticed = { increment: 10 };
+    updates.lastLessonDate = new Date(); // mark today's lesson as done
   }
 
   const profileFields = ["name", "targetLanguage", "nativeLanguage", "level", "goals", "dailyMinutes"];

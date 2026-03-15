@@ -2,19 +2,27 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { getTodayTopic, getUpcomingSchedule, TOPICS } from "@/lib/topics";
 
-const LESSON_TOPICS = ["Greetings & Introductions", "Business Meetings", "Travel & Dining", "Negotiations", "Presentations", "Small Talk", "Emails & Writing"];
-const LANGUAGE_LABELS: Record<string, string> = { arabic: "Arabic 🇸🇦", english: "English 🇺🇸", spanish: "Spanish 🇪🇸", french: "French 🇫🇷", german: "German 🇩🇪", mandarin: "Mandarin 🇨🇳", japanese: "Japanese 🇯🇵", portuguese: "Portuguese 🇧🇷", italian: "Italian 🇮🇹" };
+const LANGUAGE_LABELS: Record<string, string> = {
+  arabic: "Arabic 🇸🇦", english: "English 🇺🇸", spanish: "Spanish 🇪🇸",
+  french: "French 🇫🇷", german: "German 🇩🇪", mandarin: "Mandarin 🇨🇳",
+  japanese: "Japanese 🇯🇵", portuguese: "Portuguese 🇧🇷", italian: "Italian 🇮🇹",
+};
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 interface UserData {
   name: string; targetLanguage: string; level: string;
   streak: number; wordsLearned: number; lessonsCompleted: number;
   minutesPracticed: number; currentLevel: number; xp: number;
-  completedTopics: string[];
+  completedTopics: string[]; todaysDone: boolean;
 }
 
 export default function Dashboard() {
   const [user, setUser] = useState<UserData | null>(null);
+  const todayTopic = getTodayTopic();
+  const schedule = getUpcomingSchedule(7); // today + next 6 days
 
   useEffect(() => {
     fetch("/api/progress").then(r => r.json()).then(setUser).catch(console.error);
@@ -24,16 +32,12 @@ export default function Dashboard() {
   const xpToNext = user ? 500 - (user.xp % 500) : 500;
   const xpPercent = user ? ((user.xp % 500) / 500) * 100 : 0;
 
-  // Find the next uncompleted topic
-  const completedTopics = user?.completedTopics ?? [];
-  const nextTopic = LESSON_TOPICS.find(t => !completedTopics.includes(t)) ?? LESSON_TOPICS[0];
-
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#080d1a" }}>
         <div className="text-center">
           <div className="text-4xl mb-4 animate-float">🌐</div>
-          <div className="flex items-center justify-center gap-2 text-slate-400">
+          <div className="flex items-center justify-center gap-2">
             <span className="typing-dot" /><span className="typing-dot" /><span className="typing-dot" />
           </div>
         </div>
@@ -67,7 +71,7 @@ export default function Dashboard() {
       </nav>
 
       <div className="max-w-6xl mx-auto px-6 py-10">
-        <div className="mb-8 animate-fade-in-up">
+        <div className="mb-8">
           <h1 className="text-3xl font-black mb-1">Good {getTimeOfDay()}, {user.name} 👋</h1>
           <p className="text-slate-400">Learning {langName} · {user.level} level</p>
         </div>
@@ -76,8 +80,8 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
             { icon: "🔥", label: "Day Streak", value: `${user.streak}` },
-            { icon: "📚", label: "Words Learned", value: `${user.wordsLearned}` },
-            { icon: "✅", label: "Lessons Done", value: `${completedTopics.length}/${LESSON_TOPICS.length}` },
+            { icon: "📚", label: "Words Saved", value: `${user.wordsLearned}` },
+            { icon: "✅", label: "Total Lessons", value: `${user.lessonsCompleted}` },
             { icon: "⏱️", label: "Minutes", value: `${user.minutesPracticed}` },
           ].map((s) => (
             <div key={s.label} className="glass rounded-2xl p-5 text-center">
@@ -101,30 +105,52 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="h-2 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
-            <div className="h-2 rounded-full transition-all duration-1000" style={{ width: `${xpPercent}%`, background: "linear-gradient(90deg, #10b981, #059669)" }} />
+            <div className="h-2 rounded-full transition-all duration-1000"
+              style={{ width: `${xpPercent}%`, background: "linear-gradient(90deg, #10b981, #059669)" }} />
           </div>
         </div>
 
+        {/* Today's lesson + quick actions */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          {/* Next lesson highlight */}
-          <Link href={`/lesson?topic=${encodeURIComponent(nextTopic)}`}
-            className="md:col-span-2 glass rounded-2xl p-8 block glass-hover group"
-            style={{ border: "1px solid rgba(16,185,129,0.2)" }}>
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="text-xs text-emerald-400 font-semibold mb-1 uppercase tracking-wider">
-                  {completedTopics.includes(nextTopic) ? "Review Lesson" : "Up Next"}
+          {user.todaysDone ? (
+            // Already done today
+            <div className="md:col-span-2 glass rounded-2xl p-8" style={{ border: "1px solid rgba(16,185,129,0.3)" }}>
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="text-xs text-emerald-400 font-semibold uppercase tracking-wider">Today&apos;s Lesson</div>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold text-black" style={{ background: "#10b981" }}>✓ Done</span>
+                  </div>
+                  <h2 className="text-xl font-black">{todayTopic}</h2>
+                  <p className="text-slate-400 text-sm mt-1">In {langName} · Great job today! 🎉</p>
                 </div>
-                <h2 className="text-xl font-black">{nextTopic}</h2>
-                <p className="text-slate-400 text-sm mt-1">In {langName} · ~10 min</p>
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl"
+                  style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)" }}>✅</div>
               </div>
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl"
-                style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)" }}>📖</div>
+              <Link href={`/lesson?topic=${encodeURIComponent(todayTopic)}`}
+                className="text-sm text-slate-500 hover:text-emerald-400 transition-colors">
+                Review today&apos;s lesson →
+              </Link>
             </div>
-            <div className="flex items-center gap-2 text-sm text-emerald-400 group-hover:gap-3 transition-all">
-              Start lesson <span>→</span>
-            </div>
-          </Link>
+          ) : (
+            // Not done yet
+            <Link href={`/lesson?topic=${encodeURIComponent(todayTopic)}`}
+              className="md:col-span-2 glass rounded-2xl p-8 block glass-hover group"
+              style={{ border: "1px solid rgba(16,185,129,0.2)" }}>
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <div className="text-xs text-emerald-400 font-semibold mb-1 uppercase tracking-wider">Today&apos;s Lesson</div>
+                  <h2 className="text-xl font-black">{todayTopic}</h2>
+                  <p className="text-slate-400 text-sm mt-1">In {langName} · ~10 min</p>
+                </div>
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl"
+                  style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)" }}>📖</div>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-emerald-400 group-hover:gap-3 transition-all">
+                Start lesson <span>→</span>
+              </div>
+            </Link>
+          )}
 
           {/* Quick actions */}
           <div className="space-y-3">
@@ -141,41 +167,61 @@ export default function Dashboard() {
             <Link href="/dictionary" className="glass rounded-xl p-4 flex items-center gap-4 glass-hover block">
               <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
                 style={{ background: "rgba(16,185,129,0.2)", border: "1px solid rgba(16,185,129,0.3)" }}>📖</div>
-              <div>
-                <div className="font-semibold text-sm">My Dictionary</div>
-                <div className="text-xs text-slate-500">{user.wordsLearned} words saved</div>
-              </div>
+              <div><div className="font-semibold text-sm">My Dictionary</div><div className="text-xs text-slate-500">{user.wordsLearned} words saved</div></div>
             </Link>
           </div>
         </div>
 
-        {/* All lessons */}
-        <div className="glass rounded-2xl p-6">
+        {/* Weekly schedule */}
+        <div className="glass rounded-2xl p-6 mb-8">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="font-bold text-slate-300">All Lessons</h3>
-            <span className="text-xs text-slate-500">{completedTopics.length}/{LESSON_TOPICS.length} completed</span>
+            <h3 className="font-bold text-slate-300">This Week&apos;s Schedule</h3>
+            <span className="text-xs text-slate-500">New lesson every day</span>
           </div>
-          <div className="grid md:grid-cols-2 gap-3">
-            {LESSON_TOPICS.map((topic, i) => {
-              const done = completedTopics.includes(topic);
-              const isNext = topic === nextTopic && !done;
+          <div className="grid grid-cols-7 gap-2">
+            {schedule.map(({ date, topic, isToday }) => (
+              <Link key={date.toISOString()} href={`/lesson?topic=${encodeURIComponent(topic)}`}
+                className="text-center group"
+                style={{ pointerEvents: isToday ? "auto" : "none" }}>
+                <div className="text-xs text-slate-500 mb-2">{DAY_NAMES[date.getDay()]}</div>
+                <div className="text-xs text-slate-600 mb-2">{date.getDate()}</div>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mx-auto mb-2 transition-all ${isToday ? "ring-2 ring-emerald-400" : ""}`}
+                  style={isToday && user.todaysDone ? { background: "linear-gradient(135deg, #10b981, #059669)", color: "black" }
+                    : isToday ? { background: "rgba(16,185,129,0.2)", color: "#10b981" }
+                    : { background: "rgba(255,255,255,0.05)", color: "#475569" }}>
+                  {isToday && user.todaysDone ? "✓" : TOPICS.indexOf(topic) + 1}
+                </div>
+                <div className={`text-xs leading-tight ${isToday ? "text-slate-300 font-medium" : "text-slate-600"}`}
+                  style={{ fontSize: "10px" }}>
+                  {topic.split(" ")[0]}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* All topics reference */}
+        <div className="glass rounded-2xl p-6">
+          <h3 className="font-bold text-slate-300 mb-4">All Topics (cycling)</h3>
+          <div className="grid md:grid-cols-2 gap-2">
+            {TOPICS.map((topic, i) => {
+              const isTodayTopic = topic === todayTopic;
               return (
                 <Link key={topic} href={`/lesson?topic=${encodeURIComponent(topic)}`}
-                  className="flex items-center gap-4 p-4 rounded-xl transition-all group"
+                  className="flex items-center gap-3 p-3 rounded-xl transition-all"
                   style={{
-                    background: done ? "rgba(16,185,129,0.08)" : isNext ? "rgba(16,185,129,0.05)" : "rgba(255,255,255,0.03)",
-                    border: done ? "1px solid rgba(16,185,129,0.25)" : isNext ? "1px solid rgba(16,185,129,0.2)" : "1px solid rgba(255,255,255,0.06)",
+                    background: isTodayTopic ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.02)",
+                    border: isTodayTopic ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(255,255,255,0.05)",
                   }}>
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                    style={done ? { background: "linear-gradient(135deg, #10b981, #059669)", color: "black" } : { background: "rgba(255,255,255,0.08)", color: "#64748b" }}>
-                    {done ? "✓" : i + 1}
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={isTodayTopic ? { background: "linear-gradient(135deg, #10b981, #059669)", color: "black" }
+                      : { background: "rgba(255,255,255,0.07)", color: "#64748b" }}>
+                    {i + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-semibold truncate ${done ? "text-slate-300" : "text-slate-400"}`}>{topic}</div>
-                    <div className="text-xs text-slate-600 mt-0.5">{done ? "Completed · tap to review" : isNext ? "Up next" : "Locked until previous done"}</div>
+                    <div className={`text-sm truncate ${isTodayTopic ? "text-white font-semibold" : "text-slate-500"}`}>{topic}</div>
                   </div>
-                  {isNext && <span className="text-xs text-emerald-400 font-semibold flex-shrink-0">Start →</span>}
-                  {done && <span className="text-xs text-slate-600 flex-shrink-0">Review</span>}
+                  {isTodayTopic && <span className="text-xs text-emerald-400 font-semibold flex-shrink-0">Today</span>}
                 </Link>
               );
             })}

@@ -3,10 +3,7 @@ import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export const TOPICS = [
-  "Greetings & Introductions", "Business Meetings", "Travel & Dining",
-  "Negotiations", "Presentations", "Small Talk", "Emails & Writing",
-];
+import { TOPICS, getTodayTopic } from "@/lib/topics";
 
 // Map app language keys → Google Translate TTS lang codes
 const LANG_CODES: Record<string, string> = {
@@ -71,7 +68,7 @@ function SpeakButton({ text, langCode }: { text: string; langCode: string }) {
 function LessonContent() {
   const searchParams = useSearchParams();
   const topicParam = searchParams.get("topic");
-  const topic = topicParam && TOPICS.includes(topicParam) ? topicParam : TOPICS[new Date().getDay() % TOPICS.length];
+  const topic = topicParam && TOPICS.includes(topicParam) ? topicParam : getTodayTopic();
 
   const [user, setUser] = useState<UserData | null>(null);
   const [mounted, setMounted] = useState(false);
