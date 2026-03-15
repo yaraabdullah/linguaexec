@@ -1,9 +1,15 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   const { language, level, topic } = await req.json();
+
+  const client = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    maxRetries: 3,
+    timeout: 30000,
+  });
 
   const langMap: Record<string, string> = { arabic: "Arabic", english: "English", spanish: "Spanish" };
   const targetLang = langMap[language] || language;
