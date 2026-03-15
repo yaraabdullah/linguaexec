@@ -49,8 +49,8 @@ export default function Dashboard() {
             <Link href="/lesson" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Lesson</Link>
             <Link href="/conversation" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Conversation</Link>
             <Link href="/scenarios" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Scenarios</Link>
-            <Link href="/leaderboard" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">🏆 Leaderboard</Link>
-            <Link href="/settings" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">⚙️ Settings</Link>
+            <Link href="/leaderboard" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Leaderboard</Link>
+            <Link href="/settings" className="text-sm text-slate-400 hover:text-emerald-400 transition-colors">Settings</Link>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-black"
               style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
               {user.name.charAt(0).toUpperCase()}
