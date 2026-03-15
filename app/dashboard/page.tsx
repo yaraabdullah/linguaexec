@@ -29,7 +29,25 @@ interface UserData {
 export default function Dashboard() {
   const [user, setUser] = useState<UserData | null>(null);
   const [customTopic, setCustomTopic] = useState("");
+  const [undoing, setUndoing] = useState(false);
   const router = useRouter();
+
+  async function handleUndoLesson() {
+    if (undoing) return;
+    setUndoing(true);
+    try {
+      await fetch("/api/progress", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ undoDailyLesson: true }),
+      });
+      // Refresh user data
+      const updated = await fetch("/api/progress").then(r => r.json());
+      setUser(updated);
+    } finally {
+      setUndoing(false);
+    }
+  }
 
   useEffect(() => {
     fetch("/api/progress").then(r => r.json()).then(setUser).catch(console.error);
@@ -189,6 +207,11 @@ export default function Dashboard() {
                 <span className="text-sm text-slate-500">
                   Next up: <span className="text-slate-300">{getUserTopic(user.lessonsCompleted)}</span>
                 </span>
+                <span className="text-slate-700 text-xs">|</span>
+                <button onClick={handleUndoLesson} disabled={undoing}
+                  className="text-xs text-slate-600 hover:text-slate-400 transition-colors disabled:opacity-40">
+                  {undoing ? "Undoing…" : "Marked by mistake? Undo"}
+                </button>
               </div>
             </div>
           ) : (

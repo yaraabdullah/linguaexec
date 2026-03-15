@@ -63,6 +63,20 @@ export async function PATCH(req: Request) {
     updates.minutesPracticed = { increment: 10 };
     updates.lastLessonDate = new Date(); // mark today's lesson as done
   }
+  if (body.undoDailyLesson) {
+    // Undo an incorrectly-marked daily lesson (e.g. caused by old custom-session bug)
+    const current = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { lessonsCompleted: true, lastLessonDate: true, minutesPracticed: true },
+    });
+    updates.lastLessonDate = null;
+    if ((current?.lessonsCompleted ?? 0) > 0) {
+      updates.lessonsCompleted = { decrement: 1 };
+    }
+    if ((current?.minutesPracticed ?? 0) >= 10) {
+      updates.minutesPracticed = { decrement: 10 };
+    }
+  }
 
   const profileFields = ["name", "targetLanguage", "nativeLanguage", "level", "goals", "dailyMinutes"];
   for (const f of profileFields) if (body[f] !== undefined) updates[f] = body[f];
