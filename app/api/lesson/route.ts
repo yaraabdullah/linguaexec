@@ -27,11 +27,12 @@ Structure your lesson as valid JSON with this exact format:
   },
   "culturalTip": "one relevant business/cultural insight",
   "quiz": [
-    {"question": "quiz question", "options": ["A", "B", "C", "D"], "correct": 0, "explanation": "why this is correct"}
+    {"question": "quiz question", "options": ["A", "B", "C", "D"], "pronunciations": ["romanization-A", "romanization-B", "romanization-C", "romanization-D"], "correct": 0, "explanation": "why this is correct"}
   ]
 }
 
-Keep vocabulary to 6 items, phrases to 4 items, quiz to 3 questions. Make content executive-relevant and practical. Return ONLY valid JSON, no markdown.`;
+Keep vocabulary to 6 items, phrases to 4 items, quiz to 3 questions. Make content executive-relevant and practical.
+IMPORTANT: For the quiz "pronunciations" field, provide the romanized pronunciation for each option so learners who don't read the script can still understand the choices. Return ONLY valid JSON, no markdown.`;
 
   try {
     const response = await client.messages.create({

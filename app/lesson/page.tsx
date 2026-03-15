@@ -7,7 +7,7 @@ const TOPICS = ["Greetings & Introductions", "Business Meetings", "Travel & Dini
 
 interface VocabItem { word: string; pronunciation: string; translation: string; example: string; }
 interface Phrase { phrase: string; pronunciation: string; translation: string; usage: string; }
-interface Quiz { question: string; options: string[]; correct: number; explanation: string; }
+interface Quiz { question: string; options: string[]; pronunciations?: string[]; correct: number; explanation: string; }
 interface LessonData {
   title: string; subtitle: string;
   vocabulary: VocabItem[]; phrases: Phrase[];
@@ -136,9 +136,9 @@ export default function LessonPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 {(lesson.vocabulary ?? []).map((item, i) => (
                   <div key={i} className="glass rounded-xl p-5 glass-hover">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="text-xl font-bold text-white">{item.word}</div>
-                      <div className="text-xs px-2 py-1 rounded-full text-amber-400" style={{ background: "rgba(245,158,11,0.1)" }}>/{item.pronunciation}/</div>
+                    <div className="mb-2">
+                      <div className="text-xl font-bold text-white mb-1">{item.word}</div>
+                      <div className="text-sm font-semibold px-3 py-1 rounded-full inline-block text-amber-300" style={{ background: "rgba(245,158,11,0.15)" }}>🔊 {item.pronunciation}</div>
                     </div>
                     <div className="text-amber-400 font-semibold text-sm mb-2">{item.translation}</div>
                     <div className="text-slate-400 text-sm italic">{item.example}</div>
@@ -152,8 +152,8 @@ export default function LessonPage() {
               <div className="space-y-4">
                 {(lesson.phrases ?? []).map((phrase, i) => (
                   <div key={i} className="glass rounded-xl p-5">
-                    <div className="text-lg font-bold text-white mb-1">{phrase.phrase}</div>
-                    <div className="text-xs text-slate-500 mb-2">/{phrase.pronunciation}/</div>
+                    <div className="text-lg font-bold text-white mb-2">{phrase.phrase}</div>
+                    <div className="text-sm font-semibold px-3 py-1 rounded-full inline-block text-amber-300 mb-3" style={{ background: "rgba(245,158,11,0.15)" }}>🔊 {phrase.pronunciation}</div>
                     <div className="text-amber-400 font-semibold text-sm mb-2">{phrase.translation}</div>
                     <div className="text-slate-400 text-sm flex items-start gap-2">
                       <span>💡</span> <span>{phrase.usage}</span>
@@ -195,12 +195,15 @@ export default function LessonPage() {
                         return (
                           <button key={oi} disabled={quizSubmitted}
                             onClick={() => setQuizAnswers(a => { const n = [...a]; n[qi] = oi; return n; })}
-                            className="w-full text-left px-4 py-3 rounded-xl text-sm transition-all"
+                            className="w-full text-left px-4 py-3 rounded-xl transition-all"
                             style={isCorrect ? { background: "rgba(34,197,94,0.2)", border: "1px solid rgba(34,197,94,0.5)", color: "#86efac" }
                               : isWrong ? { background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.5)", color: "#fca5a5" }
                               : selected ? { background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.4)", color: "#fbbf24" }
                               : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8" }}>
-                            {opt}
+                            <div className="font-semibold text-base">{opt}</div>
+                            {q.pronunciations?.[oi] && (
+                              <div className="text-xs mt-0.5 opacity-70">{q.pronunciations[oi]}</div>
+                            )}
                           </button>
                         );
                       })}
