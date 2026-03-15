@@ -4,11 +4,11 @@ import Link from "next/link";
 
 const TOPICS = ["Greetings & Introductions", "Business Meetings", "Travel & Dining", "Negotiations", "Presentations", "Small Talk", "Emails & Writing"];
 
-// Map app language keys → BCP-47 codes for Web Speech API
+// Map app language keys → Google Translate TTS lang codes
 const LANG_CODES: Record<string, string> = {
-  arabic: "ar-SA", english: "en-US", spanish: "es-ES",
-  french: "fr-FR", german: "de-DE", mandarin: "zh-CN",
-  japanese: "ja-JP", portuguese: "pt-BR", italian: "it-IT",
+  arabic: "ar", english: "en", spanish: "es",
+  french: "fr", german: "de", mandarin: "zh-CN",
+  japanese: "ja", portuguese: "pt", italian: "it",
 };
 
 interface VocabItem { word: string; pronunciation: string; translation: string; example: string; }
@@ -23,21 +23,26 @@ interface LessonData {
 }
 interface UserData { name: string; targetLanguage: string; level: string; }
 
-// Speak button component
+// Speak button component — uses Google Translate TTS via server proxy for quality
 function SpeakButton({ text, langCode }: { text: string; langCode: string }) {
   const [speaking, setSpeaking] = useState(false);
 
-  const speak = useCallback(() => {
-    if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.lang = langCode;
-    utt.rate = 0.85;
-    utt.onstart = () => setSpeaking(true);
-    utt.onend = () => setSpeaking(false);
-    utt.onerror = () => setSpeaking(false);
-    window.speechSynthesis.speak(utt);
-  }, [text, langCode]);
+  const speak = useCallback(async () => {
+    if (speaking) return;
+    setSpeaking(true);
+    try {
+      const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}&lang=${langCode}`);
+      if (!res.ok) throw new Error("TTS failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => { setSpeaking(false); URL.revokeObjectURL(url); };
+      audio.onerror = () => { setSpeaking(false); URL.revokeObjectURL(url); };
+      await audio.play();
+    } catch {
+      setSpeaking(false);
+    }
+  }, [text, langCode, speaking]);
 
   return (
     <button
