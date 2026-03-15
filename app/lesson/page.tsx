@@ -68,11 +68,12 @@ function SpeakButton({ text, langCode }: { text: string; langCode: string }) {
 function LessonContent() {
   const searchParams = useSearchParams();
   const topicParam = searchParams.get("topic");
-  // Use URL param if it's a known topic; otherwise fall back to user's current curriculum position
-  const topic = topicParam && TOPICS.includes(topicParam) ? topicParam : (user ? getUserTopic(user.lessonsCompleted) : (topicParam ?? TOPICS[0]));
 
   const [user, setUser] = useState<UserData | null>(null);
   const [mounted, setMounted] = useState(false);
+
+  // Use URL param if it's a known topic; otherwise fall back to user's current curriculum position
+  const topic = topicParam && TOPICS.includes(topicParam) ? topicParam : (user ? getUserTopic(user.lessonsCompleted) : (topicParam ?? TOPICS[0]));
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<"vocab" | "phrases" | "grammar" | "quiz">("vocab");
