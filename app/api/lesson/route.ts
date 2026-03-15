@@ -39,7 +39,7 @@ IMPORTANT: Every field that contains target-language text MUST also include a ro
   try {
     const response = await client.messages.create({
       model: "claude-haiku-4-5",
-      max_tokens: 2000,
+      max_tokens: 4096,
       messages: [{ role: "user", content: prompt }],
     });
 

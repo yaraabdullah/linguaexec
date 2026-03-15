@@ -94,7 +94,7 @@ export default function LessonPage() {
       <div className="max-w-4xl mx-auto px-6 py-10">
         {/* Header */}
         <div className="mb-8">
-          <div className="text-amber-400 text-sm font-semibold mb-1 uppercase tracking-wider">📖 Today&apos;s Topic</div>
+          <div className="text-emerald-400 text-sm font-semibold mb-1 uppercase tracking-wider">📖 Today&apos;s Topic</div>
           <h1 className="text-3xl font-black">{topic}</h1>
           {lesson && <p className="text-slate-400 mt-1">{lesson.subtitle}</p>}
         </div>
@@ -113,10 +113,10 @@ export default function LessonPage() {
           <>
             {/* Cultural tip banner */}
             {lesson.culturalTip && (
-              <div className="mb-6 p-4 rounded-xl flex items-start gap-3" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}>
+              <div className="mb-6 p-4 rounded-xl flex items-start gap-3" style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
                 <span className="text-xl">🌍</span>
                 <div>
-                  <div className="text-xs text-amber-400 font-semibold mb-1">Cultural Insight</div>
+                  <div className="text-xs text-emerald-400 font-semibold mb-1">Cultural Insight</div>
                   <p className="text-sm text-slate-300">{lesson.culturalTip}</p>
                 </div>
               </div>
@@ -127,7 +127,7 @@ export default function LessonPage() {
               {(["vocab", "phrases", "grammar", "quiz"] as const).map((t) => (
                 <button key={t} onClick={() => setTab(t)}
                   className="px-5 py-2 rounded-full text-sm font-semibold transition-all capitalize"
-                  style={tab === t ? { background: "linear-gradient(135deg, #f59e0b, #f97316)", color: "black" } : { background: "rgba(255,255,255,0.06)", color: "#94a3b8" }}>
+                  style={tab === t ? { background: "linear-gradient(135deg, #10b981, #059669)", color: "black" } : { background: "rgba(255,255,255,0.06)", color: "#94a3b8" }}>
                   {t === "vocab" ? "📚 Vocabulary" : t === "phrases" ? "💬 Phrases" : t === "grammar" ? "📝 Grammar" : "🎯 Quiz"}
                 </button>
               ))}
@@ -140,9 +140,9 @@ export default function LessonPage() {
                   <div key={i} className="glass rounded-xl p-5 glass-hover">
                     <div className="mb-2">
                       <div className="text-xl font-bold text-white mb-1">{item.word}</div>
-                      <div className="text-sm font-semibold px-3 py-1 rounded-full inline-block text-amber-300" style={{ background: "rgba(245,158,11,0.15)" }}>🔊 {item.pronunciation}</div>
+                      <div className="text-sm font-semibold px-3 py-1 rounded-full inline-block text-emerald-300" style={{ background: "rgba(16,185,129,0.15)" }}>🔊 {item.pronunciation}</div>
                     </div>
-                    <div className="text-amber-400 font-semibold text-sm mb-2">{item.translation}</div>
+                    <div className="text-emerald-400 font-semibold text-sm mb-2">{item.translation}</div>
                     <div className="text-slate-400 text-sm italic">{item.example}</div>
                   </div>
                 ))}
@@ -155,8 +155,8 @@ export default function LessonPage() {
                 {(lesson.phrases ?? []).map((phrase, i) => (
                   <div key={i} className="glass rounded-xl p-5">
                     <div className="text-lg font-bold text-white mb-2">{phrase.phrase}</div>
-                    <div className="text-sm font-semibold px-3 py-1 rounded-full inline-block text-amber-300 mb-3" style={{ background: "rgba(245,158,11,0.15)" }}>🔊 {phrase.pronunciation}</div>
-                    <div className="text-amber-400 font-semibold text-sm mb-2">{phrase.translation}</div>
+                    <div className="text-sm font-semibold px-3 py-1 rounded-full inline-block text-emerald-300 mb-3" style={{ background: "rgba(16,185,129,0.15)" }}>🔊 {phrase.pronunciation}</div>
+                    <div className="text-emerald-400 font-semibold text-sm mb-2">{phrase.translation}</div>
                     <div className="text-slate-400 text-sm flex items-start gap-2">
                       <span>💡</span> <span>{phrase.usage}</span>
                     </div>
@@ -168,7 +168,7 @@ export default function LessonPage() {
             {/* Grammar */}
             {tab === "grammar" && (
               <div className="glass rounded-2xl p-8">
-                <div className="text-xs text-amber-400 font-semibold mb-2 uppercase tracking-wider">Grammar Rule</div>
+                <div className="text-xs text-emerald-400 font-semibold mb-2 uppercase tracking-wider">Grammar Rule</div>
                 <h3 className="text-xl font-black mb-4">{lesson.grammar.rule}</h3>
                 <p className="text-slate-300 mb-6 leading-relaxed">{lesson.grammar.explanation}</p>
                 <div className="space-y-3">
@@ -176,13 +176,13 @@ export default function LessonPage() {
                   {(lesson.grammar?.examples ?? []).map((ex, i) => {
                     const isObj = typeof ex === "object" && ex !== null;
                     return (
-                      <div key={i} className="p-4 rounded-lg" style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.1)" }}>
+                      <div key={i} className="p-4 rounded-lg" style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.1)" }}>
                         <div className="flex items-start gap-3 mb-2">
-                          <span className="text-amber-400 font-bold flex-shrink-0">{i + 1}.</span>
+                          <span className="text-emerald-400 font-bold flex-shrink-0">{i + 1}.</span>
                           <span className="text-white font-semibold text-base">{isObj ? (ex as GrammarExample).text : ex}</span>
                         </div>
                         {isObj && (ex as GrammarExample).pronunciation && (
-                          <div className="ml-6 text-sm font-semibold px-3 py-0.5 rounded-full inline-block text-amber-300 mb-1" style={{ background: "rgba(245,158,11,0.15)" }}>
+                          <div className="ml-6 text-sm font-semibold px-3 py-0.5 rounded-full inline-block text-emerald-300 mb-1" style={{ background: "rgba(16,185,129,0.15)" }}>
                             🔊 {(ex as GrammarExample).pronunciation}
                           </div>
                         )}
@@ -213,7 +213,7 @@ export default function LessonPage() {
                             className="w-full text-left px-4 py-3 rounded-xl transition-all"
                             style={isCorrect ? { background: "rgba(34,197,94,0.2)", border: "1px solid rgba(34,197,94,0.5)", color: "#86efac" }
                               : isWrong ? { background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.5)", color: "#fca5a5" }
-                              : selected ? { background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.4)", color: "#fbbf24" }
+                              : selected ? { background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.4)", color: "#6ee7b7" }
                               : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8" }}>
                             <div className="font-semibold text-base">{opt}</div>
                             {q.pronunciations?.[oi] && (
@@ -234,16 +234,16 @@ export default function LessonPage() {
                 {!quizSubmitted ? (
                   <button onClick={handleQuizSubmit} disabled={quizAnswers.length !== lesson.quiz.length}
                     className="w-full py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-40"
-                    style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)", color: "black" }}>
+                    style={{ background: "linear-gradient(135deg, #10b981, #059669)", color: "black" }}>
                     Submit Answers →
                   </button>
                 ) : completed ? (
-                  <div className="text-center p-8 glass rounded-2xl" style={{ border: "1px solid rgba(245,158,11,0.3)" }}>
+                  <div className="text-center p-8 glass rounded-2xl" style={{ border: "1px solid rgba(16,185,129,0.3)" }}>
                     <div className="text-4xl mb-3">🎉</div>
                     <h3 className="text-xl font-black gradient-text mb-2">Lesson Complete!</h3>
                     <p className="text-slate-400 text-sm mb-6">+{quizAnswers.filter((a, i) => a === lesson.quiz[i]?.correct).length * 50 + 100} XP earned</p>
                     <div className="flex gap-3 justify-center">
-                      <Link href="/conversation" className="px-6 py-3 rounded-full font-bold text-sm text-black" style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)" }}>
+                      <Link href="/conversation" className="px-6 py-3 rounded-full font-bold text-sm text-black" style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
                         Practice Conversation →
                       </Link>
                       <Link href="/dashboard" className="px-6 py-3 rounded-full font-semibold text-sm glass glass-hover">
@@ -258,7 +258,7 @@ export default function LessonPage() {
         ) : (
           <div className="text-center py-16">
             <p className="text-slate-500 mb-4">Failed to load lesson</p>
-            <button onClick={loadLesson} className="px-6 py-3 rounded-full font-bold text-black" style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)" }}>
+            <button onClick={loadLesson} className="px-6 py-3 rounded-full font-bold text-black" style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
               Retry →
             </button>
           </div>
