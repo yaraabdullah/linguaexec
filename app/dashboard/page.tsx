@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { getTodayTopic, getUpcomingSchedule, TOPICS } from "@/lib/topics";
 
 const LANGUAGE_LABELS: Record<string, string> = {
@@ -21,6 +22,8 @@ interface UserData {
 
 export default function Dashboard() {
   const [user, setUser] = useState<UserData | null>(null);
+  const [customTopic, setCustomTopic] = useState("");
+  const router = useRouter();
   const todayTopic = getTodayTopic();
   const schedule = getUpcomingSchedule(7); // today + next 6 days
 
@@ -200,31 +203,42 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* All topics reference */}
-        <div className="glass rounded-2xl p-6">
-          <h3 className="font-bold text-slate-300 mb-4">All Topics (cycling)</h3>
-          <div className="grid md:grid-cols-2 gap-2">
-            {TOPICS.map((topic, i) => {
-              const isTodayTopic = topic === todayTopic;
-              return (
-                <Link key={topic} href={`/lesson?topic=${encodeURIComponent(topic)}`}
-                  className="flex items-center gap-3 p-3 rounded-xl transition-all"
-                  style={{
-                    background: isTodayTopic ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.02)",
-                    border: isTodayTopic ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(255,255,255,0.05)",
-                  }}>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={isTodayTopic ? { background: "linear-gradient(135deg, #10b981, #059669)", color: "black" }
-                      : { background: "rgba(255,255,255,0.07)", color: "#64748b" }}>
-                    {i + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-sm truncate ${isTodayTopic ? "text-white font-semibold" : "text-slate-500"}`}>{topic}</div>
-                  </div>
-                  {isTodayTopic && <span className="text-xs text-emerald-400 font-semibold flex-shrink-0">Today</span>}
-                </Link>
-              );
-            })}
+        {/* Create Your Own Session */}
+        <div className="glass rounded-2xl p-6" style={{ border: "1px solid rgba(168,85,247,0.2)" }}>
+          <div className="flex items-start gap-4 mb-5">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+              style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" }}>✨</div>
+            <div>
+              <h3 className="font-bold text-white text-lg">Create Your Own Session</h3>
+              <p className="text-slate-400 text-sm mt-0.5">Enter any topic and get a full AI-generated lesson — vocabulary, phrases, grammar &amp; quiz</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={customTopic}
+              onChange={(e) => setCustomTopic(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && customTopic.trim()) router.push(`/custom-lesson?topic=${encodeURIComponent(customTopic.trim())}`); }}
+              placeholder="e.g. Job interviews, Medical appointments, Airport…"
+              className="flex-1 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 outline-none transition-all"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
+            />
+            <button
+              onClick={() => { if (customTopic.trim()) router.push(`/custom-lesson?topic=${encodeURIComponent(customTopic.trim())}`); }}
+              disabled={!customTopic.trim()}
+              className="px-6 py-3 rounded-xl text-sm font-semibold text-black transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: "linear-gradient(135deg, #a855f7, #7c3aed)" }}>
+              Generate →
+            </button>
+          </div>
+          <div className="flex gap-2 mt-3 flex-wrap">
+            {["Job Interview", "At the Doctor", "Airport & Travel", "Shopping", "Phone Calls"].map((s) => (
+              <button key={s} onClick={() => setCustomTopic(s)}
+                className="text-xs px-3 py-1.5 rounded-full transition-colors"
+                style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)", color: "#c084fc" }}>
+                {s}
+              </button>
+            ))}
           </div>
         </div>
       </div>
