@@ -23,7 +23,9 @@ Structure your lesson as valid JSON with this exact format:
   "grammar": {
     "rule": "one key grammar point",
     "explanation": "simple explanation",
-    "examples": ["example 1", "example 2"]
+    "examples": [
+      {"text": "example sentence in target language", "pronunciation": "romanized pronunciation", "translation": "English meaning"}
+    ]
   },
   "culturalTip": "one relevant business/cultural insight",
   "quiz": [
@@ -31,8 +33,8 @@ Structure your lesson as valid JSON with this exact format:
   ]
 }
 
-Keep vocabulary to 6 items, phrases to 4 items, quiz to 3 questions. Make content executive-relevant and practical.
-IMPORTANT: For the quiz "pronunciations" field, provide the romanized pronunciation for each option so learners who don't read the script can still understand the choices. Return ONLY valid JSON, no markdown.`;
+Keep vocabulary to 6 items, phrases to 4 items, grammar to 2-3 examples, quiz to 3 questions. Make content executive-relevant and practical.
+IMPORTANT: Every field that contains target-language text MUST also include a romanized pronunciation so learners who cannot read the script can sound out the words. Return ONLY valid JSON, no markdown.`;
 
   try {
     const response = await client.messages.create({

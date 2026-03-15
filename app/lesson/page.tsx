@@ -8,10 +8,11 @@ const TOPICS = ["Greetings & Introductions", "Business Meetings", "Travel & Dini
 interface VocabItem { word: string; pronunciation: string; translation: string; example: string; }
 interface Phrase { phrase: string; pronunciation: string; translation: string; usage: string; }
 interface Quiz { question: string; options: string[]; pronunciations?: string[]; correct: number; explanation: string; }
+interface GrammarExample { text: string; pronunciation: string; translation: string; }
 interface LessonData {
   title: string; subtitle: string;
   vocabulary: VocabItem[]; phrases: Phrase[];
-  grammar: { rule: string; explanation: string; examples: string[] };
+  grammar: { rule: string; explanation: string; examples: (string | GrammarExample)[] };
   culturalTip: string; quiz: Quiz[];
 }
 
@@ -171,12 +172,25 @@ export default function LessonPage() {
                 <p className="text-slate-300 mb-6 leading-relaxed">{lesson.grammar.explanation}</p>
                 <div className="space-y-3">
                   <div className="text-xs text-slate-500 uppercase tracking-wider">Examples</div>
-                  {(lesson.grammar?.examples ?? []).map((ex, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.1)" }}>
-                      <span className="text-amber-400 font-bold">{i + 1}.</span>
-                      <span className="text-slate-300 text-sm">{ex}</span>
-                    </div>
-                  ))}
+                  {(lesson.grammar?.examples ?? []).map((ex, i) => {
+                    const isObj = typeof ex === "object" && ex !== null;
+                    return (
+                      <div key={i} className="p-4 rounded-lg" style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.1)" }}>
+                        <div className="flex items-start gap-3 mb-2">
+                          <span className="text-amber-400 font-bold flex-shrink-0">{i + 1}.</span>
+                          <span className="text-white font-semibold text-base">{isObj ? (ex as GrammarExample).text : ex}</span>
+                        </div>
+                        {isObj && (ex as GrammarExample).pronunciation && (
+                          <div className="ml-6 text-sm font-semibold px-3 py-0.5 rounded-full inline-block text-amber-300 mb-1" style={{ background: "rgba(245,158,11,0.15)" }}>
+                            🔊 {(ex as GrammarExample).pronunciation}
+                          </div>
+                        )}
+                        {isObj && (ex as GrammarExample).translation && (
+                          <div className="ml-6 text-sm text-slate-400 mt-1">{(ex as GrammarExample).translation}</div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
