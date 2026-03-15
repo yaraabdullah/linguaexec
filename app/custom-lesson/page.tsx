@@ -114,11 +114,11 @@ function CustomLessonContent() {
     const correct = quizAnswers.filter((a, i) => a === lesson.quiz[i]?.correct).length;
     const xpEarned = correct * 50 + 100;
 
-    // Update XP + lesson count
+    // Award XP + words only — do NOT set lessonCompleted so the daily lesson stays unaffected
     await fetch("/api/progress", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ xp: xpEarned, wordsLearned: lesson.vocabulary.length, lessonCompleted: true }),
+      body: JSON.stringify({ xp: xpEarned, wordsLearned: lesson.vocabulary.length }),
     });
 
     // Save vocabulary + phrases to dictionary
