@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
 import { addXP, getProfile } from "@/lib/storage";
 
 interface Message { role: "user" | "assistant"; content: string; }
@@ -80,6 +81,8 @@ export default function ConversationPage() {
               if (parsed.text) {
                 fullText += parsed.text;
                 setStreamText(fullText);
+              } else if (parsed.error) {
+                fullText = "⚠️ API unavailable. Please check your Anthropic account credits and spend limit.";
               }
             } catch { /* ignore */ }
           }
@@ -161,11 +164,11 @@ export default function ConversationPage() {
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0 mt-1"
                   style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)" }}>🤖</div>
               )}
-              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap`}
+              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed`}
                 style={msg.role === "user"
                   ? { background: "linear-gradient(135deg, #1d4ed8, #2563eb)", color: "white" }
                   : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#e2e8f0" }}>
-                {msg.content}
+                {msg.role === "assistant" ? <ReactMarkdown>{msg.content}</ReactMarkdown> : msg.content}
               </div>
             </div>
           ))}
@@ -175,9 +178,9 @@ export default function ConversationPage() {
             <div className="flex justify-start">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0 mt-1"
                 style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)" }}>🤖</div>
-              <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap"
+              <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
                 style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#e2e8f0" }}>
-                {streamText}<span className="cursor-blink ml-0.5">▋</span>
+                <ReactMarkdown>{streamText}</ReactMarkdown><span className="cursor-blink ml-0.5">▋</span>
               </div>
             </div>
           )}
